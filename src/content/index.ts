@@ -1,5 +1,6 @@
 import { isConfigComplete, loadConfig } from "../shared/config.ts";
 import { startScanning } from "./card-scanner.ts";
+import { startDetailPaneHighlighter } from "./detail-pane.ts";
 
 async function boot(): Promise<void> {
   const config = await loadConfig();
@@ -8,6 +9,7 @@ async function boot(): Promise<void> {
     return;
   }
   waitForResults(() => startScanning(config));
+  startDetailPaneHighlighter(config);
 }
 
 function renderSetupBanner(): void {

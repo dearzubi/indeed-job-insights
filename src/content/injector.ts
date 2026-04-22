@@ -1,3 +1,4 @@
+import { unwrapHighlights, wrapTerms } from "./highlight.ts";
 import { ensureStylesInjected } from "./injector.css.ts";
 import type { MatchResult } from "./matcher.ts";
 import { SELECTORS } from "./selectors.ts";
@@ -95,42 +96,5 @@ export function remove(card: HTMLElement): void {
   for (const cls of ["ext-border-green", "ext-border-blue", "ext-border-purple", "ext-dim"]) {
     card.classList.remove(cls);
   }
-  for (const hit of Array.from(card.querySelectorAll(".ext-kw-hit"))) {
-    const parent = hit.parentNode;
-    while (hit.firstChild) parent?.insertBefore(hit.firstChild, hit);
-    hit.remove();
-  }
-}
-
-function wrapTerms(host: HTMLElement, terms: string[]): void {
-  if (terms.length === 0) return;
-  const pattern = new RegExp(
-    `(${terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`,
-    "gi",
-  );
-  const walker = document.createTreeWalker(host, NodeFilter.SHOW_TEXT);
-  const textNodes: Text[] = [];
-  while (walker.nextNode()) textNodes.push(walker.currentNode as Text);
-  for (const node of textNodes) {
-    const raw = node.textContent ?? "";
-    if (!pattern.test(raw)) continue;
-    pattern.lastIndex = 0;
-    const frag = document.createDocumentFragment();
-    let lastIdx = 0;
-    for (const m of raw.matchAll(pattern)) {
-      if (m.index === undefined) continue;
-      if (m.index > lastIdx) {
-        frag.appendChild(document.createTextNode(raw.slice(lastIdx, m.index)));
-      }
-      const span = document.createElement("span");
-      span.className = "ext-kw-hit";
-      span.textContent = m[0];
-      frag.appendChild(span);
-      lastIdx = m.index + m[0].length;
-    }
-    if (lastIdx < raw.length) {
-      frag.appendChild(document.createTextNode(raw.slice(lastIdx)));
-    }
-    node.parentNode?.replaceChild(frag, node);
-  }
+  unwrapHighlights(card);
 }
