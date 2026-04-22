@@ -6,6 +6,13 @@ export interface JobLocation {
   countryCode: string | null;
 }
 
+export interface EmployerResponsive {
+  headline: string;
+  description: string;
+  averageResponseInDays: number | null;
+  responseRate: number | null;
+}
+
 export type DescriptionResult =
   | {
       ok: true;
@@ -14,6 +21,9 @@ export type DescriptionResult =
       postedToday: boolean;
       numOfCandidates: string | null;
       location: JobLocation | null;
+      organicApplyStarts: number | null;
+      mustHaveSkills: string[];
+      employerResponsive: EmployerResponsive | null;
     }
   | { ok: false; error: string };
 
@@ -38,16 +48,23 @@ export function clearDescriptionCache(): void {
   nextAllowed = 0;
 }
 
-// Balanced-brace scan starting at the first `{` after `afterIdx`, capped to
-// prevent runaway on malformed HTML. Returns the JSON object string or null.
-function extractJsonObject(html: string, afterIdx: number, maxLen = 16_000): string | null {
-  const start = html.indexOf("{", afterIdx);
+// Balanced-bracket scan starting at the first `open` bracket after `afterIdx`,
+// capped to prevent runaway on malformed HTML. Returns the matched substring or
+// null.
+function extractBalanced(
+  html: string,
+  afterIdx: number,
+  open: "{" | "[",
+  close: "}" | "]",
+  maxLen: number,
+): string | null {
+  const start = html.indexOf(open, afterIdx);
   if (start < 0) return null;
   let depth = 0;
   for (let i = start; i < html.length && i < start + maxLen; i++) {
     const c = html[i];
-    if (c === "{") depth++;
-    else if (c === "}") {
+    if (c === open) depth++;
+    else if (c === close) {
       depth--;
       if (depth === 0) return html.slice(start, i + 1);
     }
@@ -55,14 +72,48 @@ function extractJsonObject(html: string, afterIdx: number, maxLen = 16_000): str
   return null;
 }
 
+function extractJsonObject(html: string, afterIdx: number, maxLen = 16_000): string | null {
+  return extractBalanced(html, afterIdx, "{", "}", maxLen);
+}
+
+function extractJsonArray(html: string, afterIdx: number, maxLen = 200_000): string | null {
+  return extractBalanced(html, afterIdx, "[", "]", maxLen);
+}
+
 interface HiringInsights {
   age: string | null;
   postedToday: boolean;
   numOfCandidates: string | null;
+  employerResponsive: EmployerResponsive | null;
+}
+
+function parseEmployerResponsive(raw: unknown): EmployerResponsive | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as {
+    headline?: unknown;
+    description?: unknown;
+    averageResponseInDays?: unknown;
+    responseRate?: unknown;
+  };
+  const headline = typeof r.headline === "string" ? r.headline : null;
+  const description = typeof r.description === "string" ? r.description : null;
+  if (!headline && !description) return null;
+  return {
+    headline: headline ?? "",
+    description: description ?? "",
+    averageResponseInDays:
+      typeof r.averageResponseInDays === "number" ? r.averageResponseInDays : null,
+    responseRate: typeof r.responseRate === "number" ? r.responseRate : null,
+  };
 }
 
 function parseHiringInsights(html: string): HiringInsights {
-  const empty: HiringInsights = { age: null, postedToday: false, numOfCandidates: null };
+  const empty: HiringInsights = {
+    age: null,
+    postedToday: false,
+    numOfCandidates: null,
+    employerResponsive: null,
+  };
   const keyIdx = html.indexOf('"hiringInsightsModel":');
   if (keyIdx < 0) return empty;
   const json = extractJsonObject(html, keyIdx);
@@ -72,14 +123,52 @@ function parseHiringInsights(html: string): HiringInsights {
       age?: unknown;
       postedToday?: unknown;
       numOfCandidates?: unknown;
+      employerResponsiveCardModel?: unknown;
     };
     return {
       age: typeof parsed.age === "string" ? parsed.age : null,
       postedToday: parsed.postedToday === true,
       numOfCandidates: typeof parsed.numOfCandidates === "string" ? parsed.numOfCandidates : null,
+      employerResponsive: parseEmployerResponsive(parsed.employerResponsiveCardModel),
     };
   } catch {
     return empty;
+  }
+}
+
+function parseOrganicApplyStarts(html: string): number | null {
+  const keyIdx = html.indexOf('"jobStats":');
+  if (keyIdx < 0) return null;
+  const json = extractJsonObject(html, keyIdx);
+  if (!json) return null;
+  try {
+    const parsed = JSON.parse(json) as { organicApplyStarts?: unknown };
+    return typeof parsed.organicApplyStarts === "number" ? parsed.organicApplyStarts : null;
+  } catch {
+    return null;
+  }
+}
+
+function parseMustHaveSkills(html: string): string[] {
+  const keyIdx = html.indexOf('"attributeComparisons":');
+  if (keyIdx < 0) return [];
+  const json = extractJsonArray(html, keyIdx);
+  if (!json) return [];
+  try {
+    const parsed = JSON.parse(json) as Array<{
+      jobRequirementStrength?: unknown;
+      attribute?: { label?: unknown } | null;
+    }>;
+    const labels: string[] = [];
+    for (const entry of parsed) {
+      if (entry.jobRequirementStrength !== "MUST_HAVE_JOB_REQUIREMENT") continue;
+      const label = entry.attribute?.label;
+      if (typeof label === "string" && label.trim()) labels.push(label);
+    }
+    // Deduplicate while preserving order.
+    return [...new Set(labels)];
+  } catch {
+    return [];
   }
 }
 
@@ -152,6 +241,8 @@ export async function fetchJobDescription(jobKey: string): Promise<DescriptionRe
   const fullText = descEl?.textContent?.trim() ?? "";
   const insights = parseHiringInsights(html);
   const jobLocation = parseJobLocation(html);
+  const organicApplyStarts = parseOrganicApplyStarts(html);
+  const mustHaveSkills = parseMustHaveSkills(html);
 
   const result: DescriptionResult = {
     ok: true,
@@ -160,6 +251,9 @@ export async function fetchJobDescription(jobKey: string): Promise<DescriptionRe
     postedToday: insights.postedToday,
     numOfCandidates: insights.numOfCandidates,
     location: jobLocation,
+    organicApplyStarts,
+    mustHaveSkills,
+    employerResponsive: insights.employerResponsive,
   };
   cache.set(jobKey, result);
   return result;

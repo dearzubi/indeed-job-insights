@@ -67,6 +67,7 @@ async function processCard(card: HTMLElement, config: Config): Promise<void> {
   const postedAge = desc.ok ? desc.postedAge : null;
   const postedToday = desc.ok ? desc.postedToday : false;
   const numOfCandidates = desc.ok ? desc.numOfCandidates : null;
+  const organicApplyStarts = desc.ok ? desc.organicApplyStarts : null;
 
   const result = match(fullText, structuredLocation, config);
 
@@ -93,5 +94,6 @@ async function processCard(card: HTMLElement, config: Config): Promise<void> {
     postedAge,
     postedToday,
     numOfCandidates,
+    organicApplyStarts,
   });
 }

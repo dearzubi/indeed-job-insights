@@ -44,6 +44,7 @@ describe("inject / remove", () => {
       postedAge: null,
       postedToday: false,
       numOfCandidates: null,
+      organicApplyStarts: null,
     });
     expect(card.querySelector(".ext-pills")).not.toBeNull();
     expect(card.querySelectorAll(".ext-pill").length).toBeGreaterThanOrEqual(2);
@@ -70,6 +71,7 @@ describe("inject / remove", () => {
       postedAge: null,
       postedToday: false,
       numOfCandidates: null,
+      organicApplyStarts: null,
     });
     inject(card, result, {
       distanceMinutes: null,
@@ -79,6 +81,7 @@ describe("inject / remove", () => {
       postedAge: null,
       postedToday: false,
       numOfCandidates: null,
+      organicApplyStarts: null,
     });
     expect(card.querySelectorAll(".ext-pills").length).toBe(1);
   });
@@ -102,6 +105,7 @@ describe("inject / remove", () => {
       postedAge: null,
       postedToday: false,
       numOfCandidates: null,
+      organicApplyStarts: null,
     });
     expect(card.classList.contains("ext-dim")).toBe(true);
   });
@@ -125,6 +129,7 @@ describe("inject / remove", () => {
       postedAge: null,
       postedToday: false,
       numOfCandidates: null,
+      organicApplyStarts: null,
     });
     remove(card);
     expect(card.querySelector(".ext-pills")).toBeNull();
@@ -150,6 +155,7 @@ describe("inject / remove", () => {
       postedAge: null,
       postedToday: false,
       numOfCandidates: null,
+      organicApplyStarts: null,
     });
     const pills = card.querySelectorAll(".ext-pill");
     expect(pills.length).toBe(1);
@@ -176,6 +182,7 @@ describe("inject / remove", () => {
       postedAge: null,
       postedToday: false,
       numOfCandidates: null,
+      organicApplyStarts: null,
     });
     const pill = card.querySelector(".ext-pill-hybrid");
     expect(pill?.textContent).toBe("🏢 Hybrid");
@@ -200,6 +207,7 @@ describe("inject / remove", () => {
       postedAge: null,
       postedToday: false,
       numOfCandidates: null,
+      organicApplyStarts: null,
     });
     expect(card.querySelector(".ext-distance")?.textContent).toBe("🚗 42m");
   });
@@ -223,6 +231,7 @@ describe("inject / remove", () => {
       postedAge: null,
       postedToday: false,
       numOfCandidates: null,
+      organicApplyStarts: null,
     });
     expect(card.querySelector(".ext-distance")?.textContent).toBe("🚗 1h");
   });
@@ -246,6 +255,7 @@ describe("inject / remove", () => {
       postedAge: null,
       postedToday: false,
       numOfCandidates: null,
+      organicApplyStarts: null,
     });
     expect(card.querySelector(".ext-distance")?.textContent).toBe("🚗 1h 30m");
   });
@@ -269,6 +279,7 @@ describe("inject / remove", () => {
       postedAge: null,
       postedToday: false,
       numOfCandidates: null,
+      organicApplyStarts: null,
     });
     const pill = card.querySelector(".ext-pill-excluded");
     expect(pill?.textContent).toBe("⊘ 3 excluded hits");
@@ -293,6 +304,7 @@ describe("inject / remove", () => {
       postedAge: null,
       postedToday: false,
       numOfCandidates: null,
+      organicApplyStarts: null,
     });
     expect(card.querySelector(".ext-pill-excluded")?.textContent).toBe("⊘ 1 excluded hit");
   });
@@ -316,6 +328,7 @@ describe("inject / remove", () => {
       postedAge: null,
       postedToday: false,
       numOfCandidates: null,
+      organicApplyStarts: null,
     });
     expect(card.querySelector(".ext-pill-excluded")).toBeNull();
   });
@@ -339,6 +352,7 @@ describe("inject / remove", () => {
       postedAge: null,
       postedToday: false,
       numOfCandidates: null,
+      organicApplyStarts: null,
     });
     expect(card.querySelectorAll(".ext-kw-hit").length).toBe(1);
     expect(card.querySelectorAll(".ext-kw-excluded").length).toBe(0);
@@ -370,6 +384,7 @@ describe("inject / remove", () => {
       postedAge: null,
       postedToday: false,
       numOfCandidates: null,
+      organicApplyStarts: null,
     });
     expect(card.querySelectorAll(".ext-kw-excluded").length).toBe(1);
     expect(card.querySelector(".ext-kw-excluded")?.textContent).toBe("PHP");
@@ -402,6 +417,7 @@ describe("inject / remove", () => {
       postedAge: null,
       postedToday: false,
       numOfCandidates: null,
+      organicApplyStarts: null,
     });
     expect(card.querySelector(".ext-kw-hit")?.textContent).toBe("Python");
     expect(card.querySelector(".ext-kw-excluded")?.textContent).toBe("PHP");
@@ -426,6 +442,7 @@ describe("inject / remove", () => {
       postedAge: "8 days ago",
       postedToday: false,
       numOfCandidates: null,
+      organicApplyStarts: null,
     });
     expect(card.querySelector(".ext-pill-posted")?.textContent).toBe("🕒 8 days ago");
   });
@@ -449,6 +466,7 @@ describe("inject / remove", () => {
       postedAge: "anything",
       postedToday: true,
       numOfCandidates: null,
+      organicApplyStarts: null,
     });
     expect(card.querySelector(".ext-pill-posted")?.textContent).toBe("🕒 Posted today");
   });
@@ -472,6 +490,7 @@ describe("inject / remove", () => {
       postedAge: null,
       postedToday: false,
       numOfCandidates: null,
+      organicApplyStarts: null,
     });
     expect(card.querySelector(".ext-pill-posted")).toBeNull();
   });
@@ -495,6 +514,7 @@ describe("inject / remove", () => {
       postedAge: null,
       postedToday: false,
       numOfCandidates: "50+",
+      organicApplyStarts: null,
     });
     expect(card.querySelector(".ext-pill-applicants")?.textContent).toBe("👥 50+ applicants");
   });
@@ -518,6 +538,7 @@ describe("inject / remove", () => {
       postedAge: null,
       postedToday: false,
       numOfCandidates: "1",
+      organicApplyStarts: null,
     });
     expect(card.querySelector(".ext-pill-applicants")?.textContent).toBe("👥 1 applicant");
   });
@@ -541,7 +562,56 @@ describe("inject / remove", () => {
       postedAge: null,
       postedToday: false,
       numOfCandidates: null,
+      organicApplyStarts: null,
     });
     expect(card.querySelector(".ext-pill-applicants")).toBeNull();
+  });
+
+  it("renders interested pill when organicApplyStarts > 0", () => {
+    const card = makeCard();
+    const result: MatchResult = {
+      cityHit: "none",
+      workMode: "onsite",
+      cityPillLabel: null,
+      workModePillLabel: "🏙️ Onsite",
+      keywordHits: [],
+      excludedHitsCount: 0,
+      isZeroMatch: true,
+    };
+    inject(card, result, {
+      distanceMinutes: null,
+      distanceError: null,
+      dimZeroMatch: false,
+      excludedKeywords: [],
+      postedAge: null,
+      postedToday: false,
+      numOfCandidates: null,
+      organicApplyStarts: 134,
+    });
+    expect(card.querySelector(".ext-pill-interested")?.textContent).toBe("💡 134 interested");
+  });
+
+  it("omits interested pill when organicApplyStarts is null or zero", () => {
+    const card = makeCard();
+    const result: MatchResult = {
+      cityHit: "none",
+      workMode: "onsite",
+      cityPillLabel: null,
+      workModePillLabel: "🏙️ Onsite",
+      keywordHits: [],
+      excludedHitsCount: 0,
+      isZeroMatch: true,
+    };
+    inject(card, result, {
+      distanceMinutes: null,
+      distanceError: null,
+      dimZeroMatch: false,
+      excludedKeywords: [],
+      postedAge: null,
+      postedToday: false,
+      numOfCandidates: null,
+      organicApplyStarts: 0,
+    });
+    expect(card.querySelector(".ext-pill-interested")).toBeNull();
   });
 });

@@ -137,6 +137,102 @@ describe("fetchJobDescription", () => {
     if (r.ok) expect(r.location).toBeNull();
   });
 
+  it("parses organicApplyStarts from jobStats", async () => {
+    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+      new Response(
+        `<html><body>
+          <div class="jobsearch-JobComponent-description">body</div>
+          <script>"jobStats":{"__typename":"JobStats","organicApplyStarts":134}</script>
+        </body></html>`,
+        { headers: { "Content-Type": "text/html" } },
+      ),
+    );
+    const r = await fetchJobDescription("apply1");
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.organicApplyStarts).toBe(134);
+  });
+
+  it("returns null organicApplyStarts when jobStats missing", async () => {
+    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+      new Response(`<div class="jobsearch-JobComponent-description">b</div>`, {
+        headers: { "Content-Type": "text/html" },
+      }),
+    );
+    const r = await fetchJobDescription("apply2");
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.organicApplyStarts).toBeNull();
+  });
+
+  it("parses must-have skill labels from attributeComparisons", async () => {
+    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+      new Response(
+        `<html><body>
+          <div class="jobsearch-JobComponent-description">body</div>
+          <script>"attributeComparisons":[
+            {"jobRequirementStrength":"NONE","attribute":{"label":"REST"}},
+            {"jobRequirementStrength":"MUST_HAVE_JOB_REQUIREMENT","attribute":{"label":"Node.js"}},
+            {"jobRequirementStrength":"MUST_HAVE_JOB_REQUIREMENT","attribute":{"label":"Angular"}},
+            {"jobRequirementStrength":"MUST_HAVE_JOB_REQUIREMENT","attribute":{"label":"Angular"}}
+          ]</script>
+        </body></html>`,
+        { headers: { "Content-Type": "text/html" } },
+      ),
+    );
+    const r = await fetchJobDescription("skills1");
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.mustHaveSkills).toEqual(["Node.js", "Angular"]);
+  });
+
+  it("returns empty must-haves when no attributeComparisons match", async () => {
+    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+      new Response(
+        `<html><body>
+          <div class="jobsearch-JobComponent-description">body</div>
+          <script>"attributeComparisons":[{"jobRequirementStrength":"NONE","attribute":{"label":"REST"}}]</script>
+        </body></html>`,
+        { headers: { "Content-Type": "text/html" } },
+      ),
+    );
+    const r = await fetchJobDescription("skills2");
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.mustHaveSkills).toEqual([]);
+  });
+
+  it("parses employerResponsiveCardModel as EmployerResponsive", async () => {
+    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+      new Response(
+        `<html><body>
+          <div class="jobsearch-JobComponent-description">body</div>
+          <script>"hiringInsightsModel":{"age":"9 days ago","postedToday":false,"numOfCandidates":"1","employerResponsiveCardModel":{"averageResponseInDays":3,"description":"Responded to 75% or more applications in the past 30 days, typically within 3 days.","headline":"Responsive employer","responseRate":0.85}}</script>
+        </body></html>`,
+        { headers: { "Content-Type": "text/html" } },
+      ),
+    );
+    const r = await fetchJobDescription("er1");
+    expect(r.ok).toBe(true);
+    if (r.ok && r.employerResponsive) {
+      expect(r.employerResponsive.headline).toBe("Responsive employer");
+      expect(r.employerResponsive.averageResponseInDays).toBe(3);
+      expect(r.employerResponsive.responseRate).toBe(0.85);
+      expect(r.employerResponsive.description).toContain("3 days");
+    }
+  });
+
+  it("returns null employerResponsive when card model is missing", async () => {
+    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+      new Response(
+        `<html><body>
+          <div class="jobsearch-JobComponent-description">body</div>
+          <script>"hiringInsightsModel":{"age":"2 days ago","postedToday":false,"numOfCandidates":"1","employerResponsiveCardModel":null}</script>
+        </body></html>`,
+        { headers: { "Content-Type": "text/html" } },
+      ),
+    );
+    const r = await fetchJobDescription("er2");
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.employerResponsive).toBeNull();
+  });
+
   it("skips unrelated 'location' keys and finds the JobLocation block", async () => {
     (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
       new Response(

@@ -11,6 +11,7 @@ export interface InjectContext {
   postedAge: string | null;
   postedToday: boolean;
   numOfCandidates: string | null;
+  organicApplyStarts: number | null;
 }
 
 function formatPostedLabel(ctx: InjectContext): string | null {
@@ -95,6 +96,13 @@ export function inject(card: HTMLElement, result: MatchResult, ctx: InjectContex
     const p = document.createElement("span");
     p.className = "ext-pill ext-pill-applicants";
     p.textContent = applicantsLabel;
+    pillsRow.appendChild(p);
+  }
+
+  if (typeof ctx.organicApplyStarts === "number" && ctx.organicApplyStarts > 0) {
+    const p = document.createElement("span");
+    p.className = "ext-pill ext-pill-interested";
+    p.textContent = `💡 ${ctx.organicApplyStarts} interested`;
     pillsRow.appendChild(p);
   }
 

@@ -13,12 +13,21 @@ export const INJECTOR_CSS = `
 .ext-pill-excluded { background: #fecaca; color: #991b1b; border-color: #f87171; }
 .ext-pill-posted { background: #c7d2fe; color: #3730a3; border-color: #818cf8; }
 .ext-pill-applicants { background: #fde68a; color: #92400e; border-color: #fbbf24; }
+.ext-pill-interested { background: #fecdd3; color: #9f1239; border-color: #fb7185; }
 .ext-distance { display: inline-flex; align-items: center; gap: 4px; background: #bae6fd; color: #075985; font-size: 13px; font-weight: 600; padding: 3px 10px; border-radius: 12px; border: 1px solid #38bdf8; position: relative; z-index: 2; }
 .ext-distance-far { background: #fed7aa; color: #9a4c00; border-color: #fb923c; }
 .ext-distance-err { background: #fecaca; color: #991b1b; border-color: #f87171; }
 .ext-kw-hit { background: #bbf7d0; padding: 0 2px; border-radius: 2px; font-weight: 500; }
 .ext-kw-excluded { background: #fecaca; padding: 0 2px; border-radius: 2px; font-weight: 500; }
 .ext-dim { opacity: 0.45; transition: opacity 0.15s ease; }
+.ext-detail-insights { display: flex; flex-direction: column; gap: 12px; margin: 0 0 16px 0; }
+.ext-detail-section { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 14px; }
+.ext-detail-heading { margin: 0 0 8px 0; font-size: 14px; font-weight: 700; color: #0f172a; letter-spacing: 0.2px; }
+.ext-detail-skills-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.ext-detail-skill-pill { font-size: 12px; font-weight: 600; padding: 3px 10px; border-radius: 12px; background: #e9d5ff; color: #6b21a8; border: 1px solid #c084fc; letter-spacing: 0.2px; }
+.ext-detail-employer-headline { font-size: 13px; font-weight: 700; color: #166534; margin-bottom: 4px; }
+.ext-detail-employer-desc { font-size: 13px; color: #334155; margin: 0 0 6px 0; line-height: 1.4; }
+.ext-detail-employer-stats { font-size: 12px; color: #475569; font-weight: 600; }
 `;
 
 export function ensureStylesInjected(): void {
