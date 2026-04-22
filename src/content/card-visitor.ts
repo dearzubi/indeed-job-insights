@@ -39,6 +39,10 @@ async function processCard(card: HTMLElement, config: Config): Promise<void> {
     ? desc.fullText
     : (card.querySelector<HTMLElement>(SELECTORS.snippetText)?.textContent?.trim() ?? "");
 
+  const postedAge = desc.ok ? desc.postedAge : null;
+  const postedToday = desc.ok ? desc.postedToday : false;
+  const numOfCandidates = desc.ok ? desc.numOfCandidates : null;
+
   const result = match(fullText, structuredLocation, config);
 
   let distanceMinutes: number | null = null;
@@ -61,5 +65,8 @@ async function processCard(card: HTMLElement, config: Config): Promise<void> {
     distanceError,
     dimZeroMatch: config.dimZeroMatch,
     excludedKeywords: config.excludedKeywords,
+    postedAge,
+    postedToday,
+    numOfCandidates,
   });
 }

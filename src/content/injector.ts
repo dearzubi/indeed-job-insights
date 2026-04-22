@@ -8,6 +8,23 @@ export interface InjectContext {
   distanceError: string | null;
   dimZeroMatch: boolean;
   excludedKeywords: string[];
+  postedAge: string | null;
+  postedToday: boolean;
+  numOfCandidates: string | null;
+}
+
+function formatPostedLabel(ctx: InjectContext): string | null {
+  if (ctx.postedToday) return "🕒 Posted today";
+  if (ctx.postedAge?.trim()) return `🕒 ${ctx.postedAge.trim()}`;
+  return null;
+}
+
+function formatApplicantsLabel(ctx: InjectContext): string | null {
+  const raw = ctx.numOfCandidates?.trim();
+  if (!raw) return null;
+  // Grammar: "1 applicant" vs "N applicants". For "50+", "10+" style, always plural.
+  const plural = /\+/.test(raw) || raw !== "1";
+  return `👥 ${raw} applicant${plural ? "s" : ""}`;
 }
 
 const BORDER_CLASSES = ["ext-border-green", "ext-border-blue", "ext-border-purple"] as const;
@@ -60,6 +77,22 @@ export function inject(card: HTMLElement, result: MatchResult, ctx: InjectContex
     const n = result.excludedHitsCount;
     excPill.textContent = `⊘ ${n} excluded hit${n === 1 ? "" : "s"}`;
     pillsRow.appendChild(excPill);
+  }
+
+  const postedLabel = formatPostedLabel(ctx);
+  if (postedLabel) {
+    const p = document.createElement("span");
+    p.className = "ext-pill ext-pill-posted";
+    p.textContent = postedLabel;
+    pillsRow.appendChild(p);
+  }
+
+  const applicantsLabel = formatApplicantsLabel(ctx);
+  if (applicantsLabel) {
+    const p = document.createElement("span");
+    p.className = "ext-pill ext-pill-applicants";
+    p.textContent = applicantsLabel;
+    pillsRow.appendChild(p);
   }
 
   titleHost.parentElement?.insertBefore(pillsRow, titleHost);

@@ -1,4 +1,12 @@
-export type DescriptionResult = { ok: true; fullText: string } | { ok: false; error: string };
+export type DescriptionResult =
+  | {
+      ok: true;
+      fullText: string;
+      postedAge: string | null;
+      postedToday: boolean;
+      numOfCandidates: string | null;
+    }
+  | { ok: false; error: string };
 
 const cache = new Map<string, DescriptionResult>();
 
@@ -19,6 +27,51 @@ function waitTurn(): Promise<void> {
 export function clearDescriptionCache(): void {
   cache.clear();
   nextAllowed = 0;
+}
+
+interface HiringInsights {
+  age: string | null;
+  postedToday: boolean;
+  numOfCandidates: string | null;
+}
+
+function parseHiringInsights(html: string): HiringInsights {
+  const empty: HiringInsights = { age: null, postedToday: false, numOfCandidates: null };
+  const key = '"hiringInsightsModel":';
+  const keyIdx = html.indexOf(key);
+  if (keyIdx < 0) return empty;
+  const start = html.indexOf("{", keyIdx);
+  if (start < 0) return empty;
+  // Balanced-brace scan, capped to prevent runaway on malformed HTML.
+  const MAX = 16_000;
+  let depth = 0;
+  let end = -1;
+  for (let i = start; i < html.length && i < start + MAX; i++) {
+    const c = html[i];
+    if (c === "{") depth++;
+    else if (c === "}") {
+      depth--;
+      if (depth === 0) {
+        end = i + 1;
+        break;
+      }
+    }
+  }
+  if (end < 0) return empty;
+  try {
+    const parsed = JSON.parse(html.slice(start, end)) as {
+      age?: unknown;
+      postedToday?: unknown;
+      numOfCandidates?: unknown;
+    };
+    return {
+      age: typeof parsed.age === "string" ? parsed.age : null,
+      postedToday: parsed.postedToday === true,
+      numOfCandidates: typeof parsed.numOfCandidates === "string" ? parsed.numOfCandidates : null,
+    };
+  } catch {
+    return empty;
+  }
 }
 
 export async function fetchJobDescription(jobKey: string): Promise<DescriptionResult> {
@@ -52,8 +105,15 @@ export async function fetchJobDescription(jobKey: string): Promise<DescriptionRe
 
   const descEl = doc.querySelector(".jobsearch-JobComponent-description, #jobDescriptionText");
   const fullText = descEl?.textContent?.trim() ?? "";
+  const insights = parseHiringInsights(html);
 
-  const result: DescriptionResult = { ok: true, fullText };
+  const result: DescriptionResult = {
+    ok: true,
+    fullText,
+    postedAge: insights.age,
+    postedToday: insights.postedToday,
+    numOfCandidates: insights.numOfCandidates,
+  };
   cache.set(jobKey, result);
   return result;
 }
