@@ -16,3 +16,8 @@ button { font: inherit; background: #2557a7; color: #fff; border: none; padding:
 button:hover { background: #1e4a8e; }
 .status { color: #16a34a; font-size: 13px; font-weight: 500; }
 .status.error { color: #b91c1c; }
+.danger-zone { margin-top: 32px; padding-top: 20px; border-top: 1px solid #e5e5e5; }
+.danger-zone h2 { margin: 0 0 8px 0; font-size: 15px; color: #222; }
+.danger-zone p.hint { margin: 0 0 12px 0; line-height: 1.45; }
+.danger-zone button { background: #fff; color: #b91c1c; border: 1px solid #fca5a5; }
+.danger-zone button:hover { background: #fef2f2; border-color: #f87171; }

@@ -5,6 +5,7 @@ import { SELECTORS } from "./selectors.ts";
 
 async function boot(): Promise<void> {
   const config = await loadConfig();
+  if (!config.enabled) return;
   if (!isConfigComplete(config)) {
     renderSetupBanner();
     return;

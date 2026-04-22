@@ -29,5 +29,5 @@
     }
   ],
   "host_permissions": ["https://*.indeed.com/*", "https://routes.googleapis.com/*"],
-  "permissions": ["storage"]
+  "permissions": ["storage", "activeTab"]
 }

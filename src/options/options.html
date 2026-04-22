@@ -44,6 +44,17 @@
           <span id="status" class="status"></span>
         </div>
       </form>
+
+      <section class="danger-zone">
+        <h2>Location cache</h2>
+        <p class="hint">
+          Driving times are fetched from Google once per unique destination (by postcode, coordinates, or address) and stored locally for 30 days. Clearing the cache forces every card to be refetched on next view, which will use more Google Routes API quota. Do this if your address changed, you're debugging stale times, or you want to start fresh.
+        </p>
+        <div class="actions">
+          <button type="button" id="clearCache">Clear location cache</button>
+          <span id="cacheStatus" class="status"></span>
+        </div>
+      </section>
     </main>
     <script type="module" src="options.js"></script>
   </body>

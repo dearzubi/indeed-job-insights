@@ -16,6 +16,22 @@ const apiKey = $<HTMLInputElement>("googleMapsApiKey");
 const dim = $<HTMLInputElement>("dimZeroMatch");
 const dimNeg = $<HTMLInputElement>("dimNegativeMatch");
 const status = $<HTMLSpanElement>("status");
+const clearCacheBtn = $<HTMLButtonElement>("clearCache");
+const cacheStatus = $<HTMLSpanElement>("cacheStatus");
+
+const CACHE_STORAGE_KEY = "distanceCache";
+
+async function getCacheEntryCount(): Promise<number> {
+  const got = await chrome.storage.local.get(CACHE_STORAGE_KEY);
+  const raw = got[CACHE_STORAGE_KEY];
+  return raw && typeof raw === "object" ? Object.keys(raw).length : 0;
+}
+
+async function refreshCacheStatus(): Promise<void> {
+  const n = await getCacheEntryCount();
+  cacheStatus.textContent = `${n} cached location${n === 1 ? "" : "s"}.`;
+  cacheStatus.classList.remove("error");
+}
 
 async function hydrate(): Promise<void> {
   const cfg = await loadConfig();
@@ -74,4 +90,11 @@ form.addEventListener("submit", async (e) => {
   status.textContent = "Saved.";
 });
 
+clearCacheBtn.addEventListener("click", async () => {
+  await chrome.storage.local.remove(CACHE_STORAGE_KEY);
+  cacheStatus.textContent = "Cache cleared.";
+  cacheStatus.classList.remove("error");
+});
+
 void hydrate();
+void refreshCacheStatus();
