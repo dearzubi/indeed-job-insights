@@ -11,8 +11,9 @@ const HIGHLIGHTED_ATTR = "data-ext-highlighted";
  * Returns a teardown function.
  */
 export function startDetailPaneHighlighter(config: Config): () => void {
-  if (config.keywords.length === 0) return () => {};
-  const terms = [...new Set(config.keywords.map((k) => k.toLowerCase()))];
+  const positiveTerms = [...new Set(config.keywords.map((k) => k.toLowerCase()))];
+  const excludedTerms = [...new Set(config.excludedKeywords.map((k) => k.toLowerCase()))];
+  if (positiveTerms.length === 0 && excludedTerms.length === 0) return () => {};
 
   let current: HTMLElement | null = null;
 
@@ -21,7 +22,8 @@ export function startDetailPaneHighlighter(config: Config): () => void {
     if (host.getAttribute(HIGHLIGHTED_ATTR) === "1") {
       unwrapHighlights(host);
     }
-    wrapTerms(host, terms);
+    if (positiveTerms.length > 0) wrapTerms(host, positiveTerms, "ext-kw-hit");
+    if (excludedTerms.length > 0) wrapTerms(host, excludedTerms, "ext-kw-excluded");
     host.setAttribute(HIGHLIGHTED_ATTR, "1");
   };
 

@@ -37,7 +37,12 @@ describe("inject / remove", () => {
       isZeroMatch: false,
       leftBorderColor: "green",
     };
-    inject(card, result, { distanceMinutes: 42, distanceError: null, dimZeroMatch: false });
+    inject(card, result, {
+      distanceMinutes: 42,
+      distanceError: null,
+      dimZeroMatch: false,
+      excludedKeywords: [],
+    });
     expect(card.querySelector(".ext-pills")).not.toBeNull();
     expect(card.querySelectorAll(".ext-pill").length).toBeGreaterThanOrEqual(2);
     expect(card.querySelector(".ext-distance")?.textContent).toContain("42");
@@ -57,8 +62,18 @@ describe("inject / remove", () => {
       isZeroMatch: false,
       leftBorderColor: "blue",
     };
-    inject(card, result, { distanceMinutes: null, distanceError: null, dimZeroMatch: false });
-    inject(card, result, { distanceMinutes: null, distanceError: null, dimZeroMatch: false });
+    inject(card, result, {
+      distanceMinutes: null,
+      distanceError: null,
+      dimZeroMatch: false,
+      excludedKeywords: [],
+    });
+    inject(card, result, {
+      distanceMinutes: null,
+      distanceError: null,
+      dimZeroMatch: false,
+      excludedKeywords: [],
+    });
     expect(card.querySelectorAll(".ext-pills").length).toBe(1);
   });
 
@@ -74,7 +89,12 @@ describe("inject / remove", () => {
       isZeroMatch: true,
       leftBorderColor: null,
     };
-    inject(card, result, { distanceMinutes: 51, distanceError: null, dimZeroMatch: true });
+    inject(card, result, {
+      distanceMinutes: 51,
+      distanceError: null,
+      dimZeroMatch: true,
+      excludedKeywords: [],
+    });
     expect(card.classList.contains("ext-dim")).toBe(true);
   });
 
@@ -90,7 +110,12 @@ describe("inject / remove", () => {
       isZeroMatch: false,
       leftBorderColor: "purple",
     };
-    inject(card, result, { distanceMinutes: 8, distanceError: null, dimZeroMatch: false });
+    inject(card, result, {
+      distanceMinutes: 8,
+      distanceError: null,
+      dimZeroMatch: false,
+      excludedKeywords: [],
+    });
     remove(card);
     expect(card.querySelector(".ext-pills")).toBeNull();
     expect(card.classList.contains("ext-border-purple")).toBe(false);
@@ -109,7 +134,12 @@ describe("inject / remove", () => {
       isZeroMatch: true,
       leftBorderColor: null,
     };
-    inject(card, result, { distanceMinutes: null, distanceError: null, dimZeroMatch: false });
+    inject(card, result, {
+      distanceMinutes: null,
+      distanceError: null,
+      dimZeroMatch: false,
+      excludedKeywords: [],
+    });
     const pills = card.querySelectorAll(".ext-pill");
     expect(pills.length).toBe(1);
     expect(pills[0]?.className).toContain("ext-pill-onsite");
@@ -128,7 +158,12 @@ describe("inject / remove", () => {
       isZeroMatch: true,
       leftBorderColor: null,
     };
-    inject(card, result, { distanceMinutes: null, distanceError: null, dimZeroMatch: false });
+    inject(card, result, {
+      distanceMinutes: null,
+      distanceError: null,
+      dimZeroMatch: false,
+      excludedKeywords: [],
+    });
     const pill = card.querySelector(".ext-pill-hybrid");
     expect(pill?.textContent).toBe("🏢 Hybrid");
   });
@@ -145,7 +180,12 @@ describe("inject / remove", () => {
       isZeroMatch: true,
       leftBorderColor: null,
     };
-    inject(card, result, { distanceMinutes: 42, distanceError: null, dimZeroMatch: false });
+    inject(card, result, {
+      distanceMinutes: 42,
+      distanceError: null,
+      dimZeroMatch: false,
+      excludedKeywords: [],
+    });
     expect(card.querySelector(".ext-distance")?.textContent).toBe("🚗 42m");
   });
 
@@ -161,7 +201,12 @@ describe("inject / remove", () => {
       isZeroMatch: true,
       leftBorderColor: null,
     };
-    inject(card, result, { distanceMinutes: 60, distanceError: null, dimZeroMatch: false });
+    inject(card, result, {
+      distanceMinutes: 60,
+      distanceError: null,
+      dimZeroMatch: false,
+      excludedKeywords: [],
+    });
     expect(card.querySelector(".ext-distance")?.textContent).toBe("🚗 1h");
   });
 
@@ -177,7 +222,12 @@ describe("inject / remove", () => {
       isZeroMatch: true,
       leftBorderColor: null,
     };
-    inject(card, result, { distanceMinutes: 90, distanceError: null, dimZeroMatch: false });
+    inject(card, result, {
+      distanceMinutes: 90,
+      distanceError: null,
+      dimZeroMatch: false,
+      excludedKeywords: [],
+    });
     expect(card.querySelector(".ext-distance")?.textContent).toBe("🚗 1h 30m");
   });
 
@@ -193,7 +243,12 @@ describe("inject / remove", () => {
       isZeroMatch: true,
       leftBorderColor: null,
     };
-    inject(card, result, { distanceMinutes: null, distanceError: null, dimZeroMatch: false });
+    inject(card, result, {
+      distanceMinutes: null,
+      distanceError: null,
+      dimZeroMatch: false,
+      excludedKeywords: [],
+    });
     const pill = card.querySelector(".ext-pill-excluded");
     expect(pill?.textContent).toBe("⊘ 3 excluded hits");
   });
@@ -210,7 +265,12 @@ describe("inject / remove", () => {
       isZeroMatch: true,
       leftBorderColor: null,
     };
-    inject(card, result, { distanceMinutes: null, distanceError: null, dimZeroMatch: false });
+    inject(card, result, {
+      distanceMinutes: null,
+      distanceError: null,
+      dimZeroMatch: false,
+      excludedKeywords: [],
+    });
     expect(card.querySelector(".ext-pill-excluded")?.textContent).toBe("⊘ 1 excluded hit");
   });
 
@@ -226,7 +286,93 @@ describe("inject / remove", () => {
       isZeroMatch: true,
       leftBorderColor: null,
     };
-    inject(card, result, { distanceMinutes: null, distanceError: null, dimZeroMatch: false });
+    inject(card, result, {
+      distanceMinutes: null,
+      distanceError: null,
+      dimZeroMatch: false,
+      excludedKeywords: [],
+    });
     expect(card.querySelector(".ext-pill-excluded")).toBeNull();
+  });
+
+  it("wraps positive keywords in ext-kw-hit (green)", () => {
+    const card = makeCard();
+    const result: MatchResult = {
+      cityHit: "none",
+      workMode: "onsite",
+      cityPillLabel: null,
+      workModePillLabel: "🏙️ Onsite",
+      keywordHits: [{ term: "Python", start: 0, end: 6 }],
+      excludedHitsCount: 0,
+      isZeroMatch: false,
+      leftBorderColor: null,
+    };
+    inject(card, result, {
+      distanceMinutes: null,
+      distanceError: null,
+      dimZeroMatch: false,
+      excludedKeywords: [],
+    });
+    expect(card.querySelectorAll(".ext-kw-hit").length).toBe(1);
+    expect(card.querySelectorAll(".ext-kw-excluded").length).toBe(0);
+  });
+
+  it("wraps excluded keywords in ext-kw-excluded (red)", () => {
+    const card = document.createElement("li");
+    card.setAttribute("data-testid", "jobcard");
+    card.innerHTML = `
+      <h2 class="jobTitle"><a>Role</a></h2>
+      <span data-testid="text-location">London</span>
+      <div data-testid="job-snippet">Legacy PHP stack with WordPress CMS.</div>
+    `;
+    document.body.appendChild(card);
+    const result: MatchResult = {
+      cityHit: "none",
+      workMode: "onsite",
+      cityPillLabel: null,
+      workModePillLabel: "🏙️ Onsite",
+      keywordHits: [],
+      excludedHitsCount: 1,
+      isZeroMatch: true,
+      leftBorderColor: null,
+    };
+    inject(card, result, {
+      distanceMinutes: null,
+      distanceError: null,
+      dimZeroMatch: false,
+      excludedKeywords: ["php"],
+    });
+    expect(card.querySelectorAll(".ext-kw-excluded").length).toBe(1);
+    expect(card.querySelector(".ext-kw-excluded")?.textContent).toBe("PHP");
+    expect(card.querySelectorAll(".ext-kw-hit").length).toBe(0);
+  });
+
+  it("wraps both positive and excluded in the same snippet with distinct classes", () => {
+    const card = document.createElement("li");
+    card.setAttribute("data-testid", "jobcard");
+    card.innerHTML = `
+      <h2 class="jobTitle"><a>Role</a></h2>
+      <span data-testid="text-location">London</span>
+      <div data-testid="job-snippet">We use Python alongside legacy PHP services.</div>
+    `;
+    document.body.appendChild(card);
+    const result: MatchResult = {
+      cityHit: "none",
+      workMode: "onsite",
+      cityPillLabel: null,
+      workModePillLabel: "🏙️ Onsite",
+      keywordHits: [{ term: "Python", start: 7, end: 13 }],
+      excludedHitsCount: 1,
+      isZeroMatch: false,
+      leftBorderColor: null,
+    };
+    inject(card, result, {
+      distanceMinutes: null,
+      distanceError: null,
+      dimZeroMatch: false,
+      excludedKeywords: ["php"],
+    });
+    expect(card.querySelector(".ext-kw-hit")?.textContent).toBe("Python");
+    expect(card.querySelector(".ext-kw-excluded")?.textContent).toBe("PHP");
   });
 });

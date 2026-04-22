@@ -7,6 +7,7 @@ export interface InjectContext {
   distanceMinutes: number | null;
   distanceError: string | null;
   dimZeroMatch: boolean;
+  excludedKeywords: string[];
 }
 
 const BORDER_CLASSES = ["ext-border-green", "ext-border-blue", "ext-border-purple"] as const;
@@ -85,9 +86,14 @@ export function inject(card: HTMLElement, result: MatchResult, ctx: InjectContex
 
   // Keyword highlights within the snippet
   const snippetEl = card.querySelector<HTMLElement>(SELECTORS.snippetText);
-  if (snippetEl && result.keywordHits.length > 0) {
-    const uniqueTerms = [...new Set(result.keywordHits.map((h) => h.term.toLowerCase()))];
-    wrapTerms(snippetEl, uniqueTerms);
+  if (snippetEl) {
+    if (result.keywordHits.length > 0) {
+      const uniqueTerms = [...new Set(result.keywordHits.map((h) => h.term.toLowerCase()))];
+      wrapTerms(snippetEl, uniqueTerms, "ext-kw-hit");
+    }
+    if (result.excludedHitsCount > 0 && ctx.excludedKeywords.length > 0) {
+      wrapTerms(snippetEl, ctx.excludedKeywords, "ext-kw-excluded");
+    }
   }
 
   // Left-border color

@@ -13,8 +13,41 @@ describe("startDetailPaneHighlighter", () => {
     host.id = "jobDescriptionText";
     host.textContent = "Python and React";
     document.body.appendChild(host);
-    const teardown = startDetailPaneHighlighter({ ...DEFAULT_CONFIG, keywords: [] });
+    const teardown = startDetailPaneHighlighter({
+      ...DEFAULT_CONFIG,
+      keywords: [],
+      excludedKeywords: [],
+    });
     expect(host.querySelectorAll(".ext-kw-hit").length).toBe(0);
+    teardown();
+  });
+
+  it("highlights excluded keywords in red in the detail pane", () => {
+    const host = document.createElement("div");
+    host.id = "jobDescriptionText";
+    host.textContent = "We use PHP and Python on the legacy stack.";
+    document.body.appendChild(host);
+    const teardown = startDetailPaneHighlighter({
+      ...DEFAULT_CONFIG,
+      keywords: ["python"],
+      excludedKeywords: ["php"],
+    });
+    expect(host.querySelector(".ext-kw-hit")?.textContent).toBe("Python");
+    expect(host.querySelector(".ext-kw-excluded")?.textContent).toBe("PHP");
+    teardown();
+  });
+
+  it("activates when only excluded keywords are configured", () => {
+    const host = document.createElement("div");
+    host.id = "jobDescriptionText";
+    host.textContent = "PHP everywhere in this codebase.";
+    document.body.appendChild(host);
+    const teardown = startDetailPaneHighlighter({
+      ...DEFAULT_CONFIG,
+      keywords: [],
+      excludedKeywords: ["php"],
+    });
+    expect(host.querySelectorAll(".ext-kw-excluded").length).toBe(1);
     teardown();
   });
 
