@@ -18,22 +18,6 @@ describe("match — location classification", () => {
     const r = match("", "MISSISSAUGA, ON, CANADA", baseConfig);
     expect(r.cityHit).toBe("home");
   });
-  it("returns remote when description says remote", () => {
-    const r = match("Fully remote role", "Toronto, ON", baseConfig);
-    expect(r.cityHit).toBe("remote");
-  });
-  it("returns remote for 'work from home'", () => {
-    const r = match("Work from home position", "Toronto, ON", baseConfig);
-    expect(r.cityHit).toBe("remote");
-  });
-  it("returns remote for 'WFH'", () => {
-    const r = match("WFH welcome", "Toronto, ON", baseConfig);
-    expect(r.cityHit).toBe("remote");
-  });
-  it("returns remote for 'hybrid'", () => {
-    const r = match("Hybrid role (2 days in office)", "Toronto, ON", baseConfig);
-    expect(r.cityHit).toBe("remote");
-  });
   it("returns home-mentioned when city in body but not structured", () => {
     const r = match("We hire from Mississauga and Oakville", "Toronto, ON", baseConfig);
     expect(r.cityHit).toBe("home-mentioned");
@@ -46,13 +30,45 @@ describe("match — location classification", () => {
     const r = match("Calgary-only position", "Calgary, AB", baseConfig);
     expect(r.cityHit).toBe("none");
   });
-  it("prefers remote over home-mentioned", () => {
-    const r = match("Remote. Based in Mississauga office.", "Toronto, ON", baseConfig);
-    expect(r.cityHit).toBe("remote");
-  });
   it("whole-word only for homeCity mention", () => {
     const r = match("We are mississaugac", "Toronto, ON", baseConfig);
     expect(r.cityHit).toBe("none");
+  });
+});
+
+describe("match — work mode", () => {
+  const cfg = { ...baseConfig, keywords: [] };
+
+  it("onsite when structured location has no prefix", () => {
+    const r = match("body text", "London E1W 1BA", cfg);
+    expect(r.workMode).toBe("onsite");
+    expect(r.workModePillLabel).toBe("🏙️ Onsite");
+  });
+  it("hybrid when structured location starts with 'Hybrid'", () => {
+    const r = match("body text", "Hybrid work in London", cfg);
+    expect(r.workMode).toBe("hybrid");
+    expect(r.workModePillLabel).toBe("🏢 Hybrid");
+  });
+  it("remote when structured location starts with 'Remote'", () => {
+    const r = match("body text", "Remote in London", cfg);
+    expect(r.workMode).toBe("remote");
+    expect(r.workModePillLabel).toBe("🏠 Remote");
+  });
+  it("onsite even if the body mentions WFH or remote (prevents benefits-text false positives)", () => {
+    const r = match(
+      "We offer WFH days as a benefit. Fully remote fridays. Work from home!",
+      "London",
+      cfg,
+    );
+    expect(r.workMode).toBe("onsite");
+  });
+  it("onsite when the body mentions hybrid but the location is not prefixed", () => {
+    const r = match("We operate in a hybrid mode some teams", "Manchester", cfg);
+    expect(r.workMode).toBe("onsite");
+  });
+  it("remote when structured location is exactly 'Remote'", () => {
+    const r = match("any body", "Remote", cfg);
+    expect(r.workMode).toBe("remote");
   });
 });
 
@@ -100,11 +116,6 @@ describe("match — pill label and left-border color", () => {
     expect(r.leftBorderColor).toBe("purple");
     expect(r.cityPillLabel).toBe("📍 Home city match");
   });
-  it("remote → blue border, 'Remote' pill", () => {
-    const r = match("Fully remote", "Toronto, ON", cfg);
-    expect(r.leftBorderColor).toBe("blue");
-    expect(r.cityPillLabel).toBe("🏠 Remote");
-  });
   it("home-mentioned → green border, 'Mississauga mentioned' pill", () => {
     const r = match("We also hire from Mississauga", "Toronto, ON", cfg);
     expect(r.leftBorderColor).toBe("green");
@@ -129,5 +140,45 @@ describe("match — pill label and left-border color", () => {
   it("home city directly matches → isZeroMatch false even with no keywords", () => {
     const r = match("", "Mississauga, ON", { ...baseConfig, keywords: [] });
     expect(r.isZeroMatch).toBe(false);
+  });
+  it("home-mentioned works when hybrid prefix is on the structured location", () => {
+    const r = match("We also hire from Mississauga area", "Hybrid work in Toronto, ON", {
+      ...baseConfig,
+      keywords: [],
+    });
+    expect(r.cityHit).toBe("home-mentioned");
+    expect(r.workMode).toBe("hybrid");
+  });
+  it("home exact match still works when structured location has hybrid prefix", () => {
+    const r = match("body", "Hybrid work in Mississauga", { ...baseConfig, keywords: [] });
+    expect(r.cityHit).toBe("home");
+    expect(r.workMode).toBe("hybrid");
+  });
+});
+
+describe("match — border color with work mode", () => {
+  it("remote work mode → blue border", () => {
+    const r = match("body", "Remote in London", { ...baseConfig, keywords: [] });
+    expect(r.leftBorderColor).toBe("blue");
+  });
+  it("hybrid work mode alone → no border color", () => {
+    const r = match("body", "Hybrid work in Edinburgh", { ...baseConfig, keywords: [] });
+    expect(r.leftBorderColor).toBeNull();
+  });
+  it("home beats hybrid work mode for border color (purple wins)", () => {
+    const r = match("body", "Mississauga, ON", { ...baseConfig, keywords: [] });
+    expect(r.leftBorderColor).toBe("purple");
+  });
+  it("remote beats home for border color (blue wins)", () => {
+    const r = match("body", "Remote in Mississauga, ON", { ...baseConfig, keywords: [] });
+    expect(r.leftBorderColor).toBe("blue");
+  });
+  it("remote card is not zero-match even with no city or keyword hits", () => {
+    const r = match("body", "Remote in Somewhere", { ...baseConfig, keywords: [] });
+    expect(r.isZeroMatch).toBe(false);
+  });
+  it("hybrid card with no city or keyword hits is zero-match", () => {
+    const r = match("body", "Hybrid work in Somewhere", { ...baseConfig, keywords: [] });
+    expect(r.isZeroMatch).toBe(true);
   });
 });

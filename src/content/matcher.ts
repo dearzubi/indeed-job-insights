@@ -1,7 +1,9 @@
 import type { Config } from "../shared/config.ts";
+import { sanitizeLocation } from "../shared/location.ts";
 import { buildWholeWordRegex, normalizeCityName } from "../shared/normalize.ts";
 
-export type CityHit = "home" | "home-mentioned" | "nearby" | "remote" | "none";
+export type CityHit = "home" | "home-mentioned" | "nearby" | "none";
+export type WorkMode = "remote" | "hybrid" | "onsite";
 
 export interface KeywordHit {
   term: string;
@@ -11,21 +13,21 @@ export interface KeywordHit {
 
 export interface MatchResult {
   cityHit: CityHit;
+  workMode: WorkMode;
   cityPillLabel: string | null;
+  workModePillLabel: string;
   keywordHits: KeywordHit[];
   isZeroMatch: boolean;
   leftBorderColor: "green" | "blue" | "purple" | null;
 }
-
-const REMOTE_RE = /\b(fully remote|work from home|wfh|remote|hybrid)\b/i;
 
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function classifyLocation(lowerText: string, structuredLocation: string, config: Config): CityHit {
-  if (REMOTE_RE.test(lowerText)) return "remote";
-  const normStructured = normalizeCityName(structuredLocation);
+  const cleanedStructured = sanitizeLocation(structuredLocation);
+  const normStructured = normalizeCityName(cleanedStructured);
   const normHome = normalizeCityName(config.homeCity);
   if (normHome && normStructured === normHome) return "home";
   if (normHome && new RegExp(`\\b${escapeRegex(normHome)}\\b`, "i").test(lowerText)) {
@@ -37,6 +39,13 @@ function classifyLocation(lowerText: string, structuredLocation: string, config:
     if (new RegExp(`\\b${escapeRegex(norm)}\\b`, "i").test(lowerText)) return "nearby";
   }
   return "none";
+}
+
+function detectWorkMode(structuredLocation: string): WorkMode {
+  const trimmed = structuredLocation.trim();
+  if (/^hybrid\b/i.test(trimmed)) return "hybrid";
+  if (/^remote\b/i.test(trimmed)) return "remote";
+  return "onsite";
 }
 
 export function match(fullText: string, structuredLocation: string, config: Config): MatchResult {
@@ -56,19 +65,27 @@ export function match(fullText: string, structuredLocation: string, config: Conf
     }
   }
 
+  const workMode = detectWorkMode(structuredLocation);
   const cityPillLabel = makeCityPillLabel(cityHit, fullText, config);
-  const leftBorderColor = makeBorderColor(cityHit, keywordHits.length);
-  const isZeroMatch = cityHit === "none" && keywordHits.length === 0;
+  const workModePillLabel = makeWorkModePillLabel(workMode);
+  const leftBorderColor = makeBorderColor(cityHit, workMode, keywordHits.length);
+  const isZeroMatch = cityHit === "none" && keywordHits.length === 0 && workMode !== "remote";
 
-  return { cityHit, cityPillLabel, keywordHits, isZeroMatch, leftBorderColor };
+  return {
+    cityHit,
+    workMode,
+    cityPillLabel,
+    workModePillLabel,
+    keywordHits,
+    isZeroMatch,
+    leftBorderColor,
+  };
 }
 
 function makeCityPillLabel(cityHit: CityHit, fullText: string, config: Config): string | null {
   switch (cityHit) {
     case "home":
       return "📍 Home city match";
-    case "remote":
-      return "🏠 Remote";
     case "home-mentioned":
       return `📍 ${config.homeCity.split(",")[0]?.trim() ?? ""} mentioned`;
     case "nearby": {
@@ -84,12 +101,24 @@ function makeCityPillLabel(cityHit: CityHit, fullText: string, config: Config): 
   }
 }
 
+function makeWorkModePillLabel(mode: WorkMode): string {
+  switch (mode) {
+    case "remote":
+      return "🏠 Remote";
+    case "hybrid":
+      return "🏢 Hybrid";
+    case "onsite":
+      return "🏙️ Onsite";
+  }
+}
+
 function makeBorderColor(
   cityHit: CityHit,
+  workMode: WorkMode,
   keywordHitCount: number,
 ): "green" | "blue" | "purple" | null {
+  if (workMode === "remote") return "blue";
   if (cityHit === "home") return "purple";
-  if (cityHit === "remote") return "blue";
   if (cityHit === "home-mentioned" || cityHit === "nearby") return "green";
   if (cityHit === "none" && keywordHitCount > 0) return "green";
   return null;

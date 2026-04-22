@@ -13,23 +13,38 @@ const BORDER_CLASSES = ["ext-border-green", "ext-border-blue", "ext-border-purpl
 
 const injected = new WeakMap<HTMLElement, HTMLElement[]>();
 
+function formatMinutes(total: number): string {
+  if (total < 60) return `${total}m`;
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return m === 0 ? `${h}h` : `${h}h ${m}m`;
+}
+
 export function inject(card: HTMLElement, result: MatchResult, ctx: InjectContext): void {
   ensureStylesInjected();
   remove(card);
 
   const nodes: HTMLElement[] = [];
 
-  // Pill row above the title
   const titleHost = card.querySelector<HTMLElement>(".jobTitle") ?? card;
   const pillsRow = document.createElement("div");
   pillsRow.className = "ext-pills";
+
+  // Work-mode pill — always present
+  const workPill = document.createElement("span");
+  workPill.className = `ext-pill ext-pill-${result.workMode}`;
+  workPill.textContent = result.workModePillLabel;
+  pillsRow.appendChild(workPill);
+
+  // City-match pill — only when there's a match
   if (result.cityPillLabel) {
-    const pill = document.createElement("span");
-    pill.className =
-      result.cityHit === "remote" ? "ext-pill ext-pill-remote" : "ext-pill ext-pill-city";
-    pill.textContent = result.cityPillLabel;
-    pillsRow.appendChild(pill);
+    const cityPill = document.createElement("span");
+    cityPill.className = "ext-pill ext-pill-city";
+    cityPill.textContent = result.cityPillLabel;
+    pillsRow.appendChild(cityPill);
   }
+
+  // Keyword count pill
   if (result.keywordHits.length > 0) {
     const kwPill = document.createElement("span");
     kwPill.className = "ext-pill ext-pill-keywords";
@@ -37,10 +52,9 @@ export function inject(card: HTMLElement, result: MatchResult, ctx: InjectContex
     kwPill.textContent = `● ${count} keyword hit${count === 1 ? "" : "s"}`;
     pillsRow.appendChild(kwPill);
   }
-  if (pillsRow.children.length > 0) {
-    titleHost.parentElement?.insertBefore(pillsRow, titleHost);
-    nodes.push(pillsRow);
-  }
+
+  titleHost.parentElement?.insertBefore(pillsRow, titleHost);
+  nodes.push(pillsRow);
 
   // Distance badge on location line
   const locEl = card.querySelector<HTMLElement>(SELECTORS.locationText);
@@ -52,7 +66,7 @@ export function inject(card: HTMLElement, result: MatchResult, ctx: InjectContex
       badge.title = ctx.distanceError;
     } else if (ctx.distanceMinutes !== null) {
       badge.className = ctx.distanceMinutes > 30 ? "ext-distance ext-distance-far" : "ext-distance";
-      badge.textContent = `🚗 ${ctx.distanceMinutes} min`;
+      badge.textContent = `🚗 ${formatMinutes(ctx.distanceMinutes)}`;
     } else {
       badge.className = "ext-distance";
       badge.textContent = "—";

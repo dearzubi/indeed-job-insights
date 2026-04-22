@@ -26,7 +26,9 @@ describe("inject / remove", () => {
     const card = makeCard();
     const result: MatchResult = {
       cityHit: "home-mentioned",
+      workMode: "onsite",
       cityPillLabel: "📍 Mississauga mentioned",
+      workModePillLabel: "🏙️ Onsite",
       keywordHits: [
         { term: "Python", start: 0, end: 6 },
         { term: "React", start: 11, end: 16 },
@@ -45,8 +47,10 @@ describe("inject / remove", () => {
   it("is idempotent — re-injecting replaces existing decorations", () => {
     const card = makeCard();
     const result: MatchResult = {
-      cityHit: "remote",
-      cityPillLabel: "🏠 Remote",
+      cityHit: "none",
+      workMode: "remote",
+      cityPillLabel: null,
+      workModePillLabel: "🏠 Remote",
       keywordHits: [],
       isZeroMatch: false,
       leftBorderColor: "blue",
@@ -60,7 +64,9 @@ describe("inject / remove", () => {
     const card = makeCard();
     const result: MatchResult = {
       cityHit: "none",
+      workMode: "onsite",
       cityPillLabel: null,
+      workModePillLabel: "🏙️ Onsite",
       keywordHits: [],
       isZeroMatch: true,
       leftBorderColor: null,
@@ -73,7 +79,9 @@ describe("inject / remove", () => {
     const card = makeCard();
     const result: MatchResult = {
       cityHit: "home",
+      workMode: "onsite",
       cityPillLabel: "📍 Home city match",
+      workModePillLabel: "🏙️ Onsite",
       keywordHits: [],
       isZeroMatch: false,
       leftBorderColor: "purple",
@@ -83,5 +91,84 @@ describe("inject / remove", () => {
     expect(card.querySelector(".ext-pills")).toBeNull();
     expect(card.classList.contains("ext-border-purple")).toBe(false);
     expect(card.classList.contains("ext-dim")).toBe(false);
+  });
+
+  it("always renders a work-mode pill even with no matches", () => {
+    const card = makeCard();
+    const result: MatchResult = {
+      cityHit: "none",
+      workMode: "onsite",
+      cityPillLabel: null,
+      workModePillLabel: "🏙️ Onsite",
+      keywordHits: [],
+      isZeroMatch: true,
+      leftBorderColor: null,
+    };
+    inject(card, result, { distanceMinutes: null, distanceError: null, dimZeroMatch: false });
+    const pills = card.querySelectorAll(".ext-pill");
+    expect(pills.length).toBe(1);
+    expect(pills[0]?.className).toContain("ext-pill-onsite");
+    expect(pills[0]?.textContent).toBe("🏙️ Onsite");
+  });
+
+  it("renders hybrid pill for hybrid cards", () => {
+    const card = makeCard();
+    const result: MatchResult = {
+      cityHit: "none",
+      workMode: "hybrid",
+      cityPillLabel: null,
+      workModePillLabel: "🏢 Hybrid",
+      keywordHits: [],
+      isZeroMatch: true,
+      leftBorderColor: null,
+    };
+    inject(card, result, { distanceMinutes: null, distanceError: null, dimZeroMatch: false });
+    const pill = card.querySelector(".ext-pill-hybrid");
+    expect(pill?.textContent).toBe("🏢 Hybrid");
+  });
+
+  it("formats distance < 60 minutes as 'Nm'", () => {
+    const card = makeCard();
+    const result: MatchResult = {
+      cityHit: "none",
+      workMode: "onsite",
+      cityPillLabel: null,
+      workModePillLabel: "🏙️ Onsite",
+      keywordHits: [],
+      isZeroMatch: true,
+      leftBorderColor: null,
+    };
+    inject(card, result, { distanceMinutes: 42, distanceError: null, dimZeroMatch: false });
+    expect(card.querySelector(".ext-distance")?.textContent).toBe("🚗 42m");
+  });
+
+  it("formats exactly 60 minutes as '1h'", () => {
+    const card = makeCard();
+    const result: MatchResult = {
+      cityHit: "none",
+      workMode: "onsite",
+      cityPillLabel: null,
+      workModePillLabel: "🏙️ Onsite",
+      keywordHits: [],
+      isZeroMatch: true,
+      leftBorderColor: null,
+    };
+    inject(card, result, { distanceMinutes: 60, distanceError: null, dimZeroMatch: false });
+    expect(card.querySelector(".ext-distance")?.textContent).toBe("🚗 1h");
+  });
+
+  it("formats 90 minutes as '1h 30m'", () => {
+    const card = makeCard();
+    const result: MatchResult = {
+      cityHit: "none",
+      workMode: "onsite",
+      cityPillLabel: null,
+      workModePillLabel: "🏙️ Onsite",
+      keywordHits: [],
+      isZeroMatch: true,
+      leftBorderColor: null,
+    };
+    inject(card, result, { distanceMinutes: 90, distanceError: null, dimZeroMatch: false });
+    expect(card.querySelector(".ext-distance")?.textContent).toBe("🚗 1h 30m");
   });
 });
