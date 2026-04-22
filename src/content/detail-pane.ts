@@ -1,17 +1,23 @@
 import type { Config } from "../shared/config.ts";
 import { fetchJobDescription } from "./description-fetch.ts";
 import { unwrapHighlights, wrapTerms } from "./highlight.ts";
+import { extractJobKey, SELECTORS } from "./selectors.ts";
 
 const DETAIL_PANE_SELECTOR = "#jobDescriptionText";
 const HIGHLIGHTED_ATTR = "data-ext-highlighted";
 const INSIGHTS_CLASS = "ext-detail-insights";
 
 function getActiveJobKey(): string | null {
+  // /jobs search results reflect the active job in `?vjk=`.
   try {
-    return new URL(location.href).searchParams.get("vjk");
+    const vjk = new URL(location.href).searchParams.get("vjk");
+    if (vjk) return vjk;
   } catch {
-    return null;
+    // fall through to DOM
   }
+  // Homepage 2-pane layout: no URL param; the active card wears `.vjs-highlight`.
+  const active = document.querySelector<HTMLElement>(SELECTORS.activeCardOutline);
+  return active ? extractJobKey(active) : null;
 }
 
 function renderSkillsBlock(skills: readonly string[]): HTMLElement | null {

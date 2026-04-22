@@ -13,6 +13,10 @@ export const SELECTORS = {
   locationText: "[data-testid='text-location'], .companyLocation",
   snippetText: "[data-testid='job-snippet'], .job-snippet, div.job-snippet",
   jobKeyAttr: "data-jk",
+  // Indeed's 2-pane layout marks the currently-viewed card with `.vjs-highlight`
+  // on its `.cardOutline` wrapper. On the homepage the URL has no `?vjk=`, so
+  // this is the only DOM signal for "active job".
+  activeCardOutline: ".cardOutline.vjs-highlight",
 };
 
 export function extractJobKey(card: Element): string | null {
