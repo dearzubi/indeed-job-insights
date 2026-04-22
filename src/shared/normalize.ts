@@ -12,3 +12,35 @@ export function normalizeCityName(input: string): string {
   out = out.replace(WHITESPACE, " ");
   return out.trim().toLowerCase();
 }
+
+export function normalizeKeyword(input: string): string {
+  return input.trim().toLowerCase();
+}
+
+const REGEX_SPECIAL = /[.*+?^${}()|[\]\\]/g;
+
+function escapeRegex(s: string): string {
+  return s.replace(REGEX_SPECIAL, "\\$&");
+}
+
+function hasWordBoundary(kw: string): boolean {
+  return /^[\p{L}\p{N}_]/u.test(kw) && /[\p{L}\p{N}_]$/u.test(kw);
+}
+
+const NEVER_MATCHES = /$.^/;
+
+export function buildWholeWordRegex(keywords: string[]): RegExp {
+  if (keywords.length === 0) return NEVER_MATCHES;
+  const parts = keywords
+    .map((raw) => {
+      const kw = raw.trim();
+      if (!kw) return null;
+      const escaped = escapeRegex(kw);
+      return hasWordBoundary(kw)
+        ? `\\b${escaped}\\b`
+        : `(?<![\\p{L}\\p{N}_])${escaped}(?![\\p{L}\\p{N}_])`;
+    })
+    .filter((p): p is string => p !== null);
+  if (parts.length === 0) return NEVER_MATCHES;
+  return new RegExp(parts.join("|"), "giu");
+}

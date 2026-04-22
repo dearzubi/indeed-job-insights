@@ -42,3 +42,48 @@ describe("normalizeCityName", () => {
     expect(normalizeCityName("Montréal, QC")).toBe("montréal");
   });
 });
+
+import { buildWholeWordRegex, normalizeKeyword } from "../../src/shared/normalize.ts";
+
+describe("normalizeKeyword", () => {
+  it("lowercases and trims", () => {
+    expect(normalizeKeyword("  Python  ")).toBe("python");
+  });
+  it("preserves internal punctuation", () => {
+    expect(normalizeKeyword(".NET")).toBe(".net");
+  });
+  it("returns empty for empty input", () => {
+    expect(normalizeKeyword("")).toBe("");
+  });
+});
+
+describe("buildWholeWordRegex", () => {
+  it("matches as whole word, case-insensitive", () => {
+    const re = buildWholeWordRegex(["python", "react"]);
+    expect("I use Python daily.".match(re)?.[0]).toBe("Python");
+    expect("React is cool".match(re)?.[0]).toBe("React");
+  });
+  it("does not match substrings", () => {
+    const re = buildWholeWordRegex(["react"]);
+    expect("reactor".match(re)).toBeNull();
+    expect("bureaucracy".match(re)).toBeNull();
+  });
+  it("matches across adjacent punctuation", () => {
+    const re = buildWholeWordRegex(["react"]);
+    expect("(React)".match(re)?.[0]).toBe("React");
+    expect("React,".match(re)?.[0]).toBe("React");
+  });
+  it("uses lookarounds for keywords starting with non-word char", () => {
+    const re = buildWholeWordRegex([".net"]);
+    expect("We use .NET daily".match(re)?.[0]).toBe(".NET");
+    expect("I prefer cabinet".match(re)).toBeNull();
+  });
+  it("returns a regex that finds no matches for empty keyword list", () => {
+    const re = buildWholeWordRegex([]);
+    expect("anything".match(re)).toBeNull();
+  });
+  it("escapes regex special characters", () => {
+    const re = buildWholeWordRegex(["c++"]);
+    expect("I code in C++ sometimes".match(re)?.[0]).toBe("C++");
+  });
+});
