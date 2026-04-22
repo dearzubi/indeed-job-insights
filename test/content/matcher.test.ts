@@ -91,3 +91,43 @@ describe("match — keyword hits", () => {
     expect(r.keywordHits[0]?.term.toLowerCase()).toBe(".net");
   });
 });
+
+describe("match — pill label and left-border color", () => {
+  const cfg = { ...baseConfig, keywords: ["python"] };
+
+  it("home → purple border, 'Home city match' pill", () => {
+    const r = match("Python role", "Mississauga, ON", cfg);
+    expect(r.leftBorderColor).toBe("purple");
+    expect(r.cityPillLabel).toBe("📍 Home city match");
+  });
+  it("remote → blue border, 'Remote' pill", () => {
+    const r = match("Fully remote", "Toronto, ON", cfg);
+    expect(r.leftBorderColor).toBe("blue");
+    expect(r.cityPillLabel).toBe("🏠 Remote");
+  });
+  it("home-mentioned → green border, 'Mississauga mentioned' pill", () => {
+    const r = match("We also hire from Mississauga", "Toronto, ON", cfg);
+    expect(r.leftBorderColor).toBe("green");
+    expect(r.cityPillLabel).toBe("📍 Mississauga mentioned");
+  });
+  it("nearby → green border, 'Brampton mentioned' pill", () => {
+    const r = match("Based in Brampton", "Markham, ON", cfg);
+    expect(r.leftBorderColor).toBe("green");
+    expect(r.cityPillLabel).toBe("📍 Brampton mentioned");
+  });
+  it("none but keyword hits → green border, no city pill", () => {
+    const r = match("Python role", "Markham, ON", cfg);
+    expect(r.leftBorderColor).toBe("green");
+    expect(r.cityPillLabel).toBeNull();
+  });
+  it("none and zero keywords → null border, no pill, isZeroMatch true", () => {
+    const r = match("C# role", "Markham, ON", cfg);
+    expect(r.leftBorderColor).toBeNull();
+    expect(r.cityPillLabel).toBeNull();
+    expect(r.isZeroMatch).toBe(true);
+  });
+  it("home city directly matches → isZeroMatch false even with no keywords", () => {
+    const r = match("", "Mississauga, ON", { ...baseConfig, keywords: [] });
+    expect(r.isZeroMatch).toBe(false);
+  });
+});

@@ -56,11 +56,47 @@ export function match(fullText: string, structuredLocation: string, config: Conf
     }
   }
 
-  return {
-    cityHit,
-    cityPillLabel: null,
-    keywordHits,
-    isZeroMatch: cityHit === "none" && keywordHits.length === 0,
-    leftBorderColor: null,
-  };
+  const cityPillLabel = makeCityPillLabel(cityHit, fullText, config);
+  const leftBorderColor = makeBorderColor(cityHit, keywordHits.length);
+  const isZeroMatch = cityHit === "none" && keywordHits.length === 0;
+
+  return { cityHit, cityPillLabel, keywordHits, isZeroMatch, leftBorderColor };
+}
+
+function makeCityPillLabel(cityHit: CityHit, fullText: string, config: Config): string | null {
+  switch (cityHit) {
+    case "home":
+      return "📍 Home city match";
+    case "remote":
+      return "🏠 Remote";
+    case "home-mentioned":
+      return `📍 ${config.homeCity.split(",")[0]?.trim() ?? ""} mentioned`;
+    case "nearby": {
+      const lower = fullText.toLowerCase();
+      const hit = config.nearbyCities.find((c) => {
+        const norm = normalizeCityName(c);
+        return norm && new RegExp(`\\b${escapeRegex(norm)}\\b`, "i").test(lower);
+      });
+      return hit ? `📍 ${capitalize(hit)} mentioned` : "📍 Nearby city mentioned";
+    }
+    case "none":
+      return null;
+  }
+}
+
+function makeBorderColor(
+  cityHit: CityHit,
+  keywordHitCount: number,
+): "green" | "blue" | "purple" | null {
+  if (cityHit === "home") return "purple";
+  if (cityHit === "remote") return "blue";
+  if (cityHit === "home-mentioned" || cityHit === "nearby") return "green";
+  if (cityHit === "none" && keywordHitCount > 0) return "green";
+  return null;
+}
+
+function capitalize(s: string): string {
+  const t = s.trim();
+  if (!t) return "";
+  return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
 }
