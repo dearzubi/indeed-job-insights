@@ -1,5 +1,5 @@
 import type { Config } from "../shared/config.ts";
-import { normalizeCityName } from "../shared/normalize.ts";
+import { buildWholeWordRegex, normalizeCityName } from "../shared/normalize.ts";
 
 export type CityHit = "home" | "home-mentioned" | "nearby" | "remote" | "none";
 
@@ -42,11 +42,25 @@ function classifyLocation(lowerText: string, structuredLocation: string, config:
 export function match(fullText: string, structuredLocation: string, config: Config): MatchResult {
   const lower = fullText.toLowerCase();
   const cityHit = classifyLocation(lower, structuredLocation, config);
+
+  const keywordHits: KeywordHit[] = [];
+  if (config.keywords.length > 0) {
+    const re = buildWholeWordRegex(config.keywords);
+    for (const m of fullText.matchAll(re)) {
+      if (m.index === undefined) continue;
+      keywordHits.push({
+        term: m[0],
+        start: m.index,
+        end: m.index + m[0].length,
+      });
+    }
+  }
+
   return {
     cityHit,
     cityPillLabel: null,
-    keywordHits: [],
-    isZeroMatch: cityHit === "none",
+    keywordHits,
+    isZeroMatch: cityHit === "none" && keywordHits.length === 0,
     leftBorderColor: null,
   };
 }

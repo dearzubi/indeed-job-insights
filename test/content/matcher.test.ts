@@ -55,3 +55,39 @@ describe("match — location classification", () => {
     expect(r.cityHit).toBe("none");
   });
 });
+
+describe("match — keyword hits", () => {
+  const cfg = { ...baseConfig, keywords: ["python", "react", "typescript"] };
+
+  it("finds all keywords as whole words", () => {
+    const r = match("We use Python, React and TypeScript.", "Toronto, ON", cfg);
+    const terms = r.keywordHits.map((h) => h.term.toLowerCase());
+    expect(terms).toEqual(expect.arrayContaining(["python", "react", "typescript"]));
+    expect(r.keywordHits).toHaveLength(3);
+  });
+  it("reports correct offsets in original text", () => {
+    const text = "We love React here.";
+    const r = match(text, "Toronto, ON", { ...cfg, keywords: ["react"] });
+    expect(r.keywordHits).toHaveLength(1);
+    const hit = r.keywordHits[0];
+    if (!hit) throw new Error("expected a hit");
+    expect(text.slice(hit.start, hit.end)).toBe("React");
+  });
+  it("does not match substrings", () => {
+    const r = match("bureaucracy is bad", "Toronto, ON", { ...cfg, keywords: ["react"] });
+    expect(r.keywordHits).toEqual([]);
+  });
+  it("returns multiple hits for same term", () => {
+    const r = match("Python Python python", "Toronto, ON", { ...cfg, keywords: ["python"] });
+    expect(r.keywordHits).toHaveLength(3);
+  });
+  it("handles empty keyword list", () => {
+    const r = match("Python and React", "Toronto, ON", { ...cfg, keywords: [] });
+    expect(r.keywordHits).toEqual([]);
+  });
+  it("matches keywords with non-word-boundary chars (.NET)", () => {
+    const r = match("We use .NET Core.", "Toronto, ON", { ...cfg, keywords: [".net"] });
+    expect(r.keywordHits).toHaveLength(1);
+    expect(r.keywordHits[0]?.term.toLowerCase()).toBe(".net");
+  });
+});
