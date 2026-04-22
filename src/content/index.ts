@@ -1,6 +1,7 @@
 import { isConfigComplete, loadConfig } from "../shared/config.ts";
 import { startScanning } from "./card-scanner.ts";
 import { startDetailPaneHighlighter } from "./detail-pane.ts";
+import { SELECTORS } from "./selectors.ts";
 
 async function boot(): Promise<void> {
   const config = await loadConfig();
@@ -34,7 +35,7 @@ function renderSetupBanner(): void {
 
 function waitForResults(callback: () => void): void {
   const tryStart = (): boolean => {
-    if (document.querySelector("#mosaic-provider-jobcards, .jobsearch-ResultsList")) {
+    if (document.querySelector(SELECTORS.resultsContainer)) {
       callback();
       return true;
     }
