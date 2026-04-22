@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Indeed Helper — Options</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Indeed Helper</h1>
+      <p class="subtitle">Configure your home city, nearby cities, keywords, and Google Maps key.</p>
+      <form id="form">
+        <label>
+          Home city
+          <input type="text" id="homeCity" placeholder="e.g. Mississauga, ON" required />
+        </label>
+        <label>
+          Nearby cities (one per line)
+          <textarea id="nearbyCities" rows="4" placeholder="Toronto&#10;Brampton&#10;Oakville"></textarea>
+        </label>
+        <label>
+          Keywords (one per line; whole-word, case-insensitive)
+          <textarea id="keywords" rows="6" placeholder="python&#10;react&#10;typescript"></textarea>
+        </label>
+        <label>
+          Google Maps API key
+          <input type="password" id="googleMapsApiKey" placeholder="AIza..." required />
+          <span class="hint">Stored locally. <a href="https://developers.google.com/maps/documentation/distance-matrix/get-api-key" target="_blank" rel="noopener">How to get one</a>.</span>
+        </label>
+        <label class="checkbox">
+          <input type="checkbox" id="dimZeroMatch" />
+          Dim zero-match cards by default
+        </label>
+        <div class="actions">
+          <button type="submit">Save</button>
+          <span id="status" class="status"></span>
+        </div>
+      </form>
+    </main>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>
