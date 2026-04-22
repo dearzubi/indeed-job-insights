@@ -87,8 +87,15 @@ async function processCard(card: HTMLElement, config: Config): Promise<void> {
       to: destination,
       apiKey: config.googleMapsApiKey,
     })) as ComputeDistanceResponse;
-    if (response.ok) distanceMinutes = response.minutes;
-    else distanceError = response.message;
+    if (response.ok) {
+      distanceMinutes = response.minutes;
+    } else if (response.errorKind !== "no-route") {
+      // Swallow no-route errors (generic destinations like "Remote" or just
+      // "United Kingdom" that Google can't route to). Showing a red ⚠ for
+      // these is noise — the user can't fix them. Real errors like bad key /
+      // quota / network still surface.
+      distanceError = response.message;
+    }
   }
 
   inject(card, result, {

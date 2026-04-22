@@ -16,6 +16,8 @@ export const INJECTOR_CSS = `
 .ext-distance { display: inline-flex; align-items: center; gap: 4px; background: #bae6fd; color: #075985; font-size: 13px; font-weight: 600; padding: 3px 10px; border-radius: 12px; border: 1px solid #38bdf8; position: relative; z-index: 2; }
 .ext-distance-far { background: #fed7aa; color: #9a4c00; border-color: #fb923c; }
 .ext-distance-err { background: #fecaca; color: #991b1b; border-color: #f87171; }
+.ext-distance { position: relative; }
+.ext-tooltip { position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); background: #1e293b; color: #fff; font-size: 12px; font-weight: 500; padding: 6px 10px; border-radius: 6px; white-space: nowrap; max-width: 320px; overflow: hidden; text-overflow: ellipsis; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 10; pointer-events: none; }
 .ext-kw-hit { background: #bbf7d0; padding: 0 2px; border-radius: 2px; font-weight: 500; }
 .ext-kw-excluded { background: #fecaca; padding: 0 2px; border-radius: 2px; font-weight: 500; }
 .ext-dim { opacity: 0.45; transition: opacity 0.15s ease; }

@@ -22,6 +22,37 @@ function formatPostedLabel(ctx: InjectContext): string | null {
 
 const injected = new WeakMap<HTMLElement, HTMLElement[]>();
 
+// Native `title` tooltips stay visible for ~5s with no way to shorten them.
+// We render our own bubble that auto-hides after AUTO_HIDE_MS so long error
+// messages don't linger.
+const AUTO_HIDE_MS = 2500;
+
+function attachAutoHideTooltip(host: HTMLElement, text: string): void {
+  let tooltip: HTMLElement | null = null;
+  let hideTimer: number | null = null;
+
+  const hide = (): void => {
+    if (hideTimer !== null) {
+      window.clearTimeout(hideTimer);
+      hideTimer = null;
+    }
+    if (tooltip) {
+      tooltip.remove();
+      tooltip = null;
+    }
+  };
+
+  host.addEventListener("mouseenter", () => {
+    hide();
+    tooltip = document.createElement("span");
+    tooltip.className = "ext-tooltip";
+    tooltip.textContent = text;
+    host.appendChild(tooltip);
+    hideTimer = window.setTimeout(hide, AUTO_HIDE_MS);
+  });
+  host.addEventListener("mouseleave", hide);
+}
+
 function formatMinutes(total: number): string {
   if (total < 60) return `${total}m`;
   const h = Math.floor(total / 60);
@@ -100,7 +131,7 @@ export function inject(card: HTMLElement, result: MatchResult, ctx: InjectContex
     if (ctx.distanceError) {
       badge.className = "ext-distance ext-distance-err";
       badge.textContent = "⚠";
-      badge.title = ctx.distanceError;
+      attachAutoHideTooltip(badge, ctx.distanceError);
     } else if (ctx.distanceMinutes !== null) {
       badge.className = ctx.distanceMinutes > 30 ? "ext-distance ext-distance-far" : "ext-distance";
       badge.textContent = `🚗 ${formatMinutes(ctx.distanceMinutes)}`;
