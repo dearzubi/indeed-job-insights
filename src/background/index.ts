@@ -1,4 +1,8 @@
-import type { ComputeDistanceResponse, ContentToBackground } from "../shared/messages.ts";
+import type {
+  ComputeDistanceResponse,
+  ContentToBackground,
+  DistanceDestination,
+} from "../shared/messages.ts";
 import { normalizeCityName } from "../shared/normalize.ts";
 import { DistanceCache } from "./cache.ts";
 import { fetchDrivingDistance } from "./distance.ts";
@@ -15,8 +19,14 @@ const cache = new DistanceCache(
 );
 const throttle = new Throttle(1, 1000);
 
-function cacheKey(from: string, to: string): string {
-  return `${normalizeCityName(from)}→${normalizeCityName(to)}`;
+function destKey(to: DistanceDestination): string {
+  if ("address" in to) return normalizeCityName(to.address);
+  // Round to ~11m so cards at near-identical coordinates share a cache entry.
+  return `@${to.lat.toFixed(4)},${to.lng.toFixed(4)}`;
+}
+
+function cacheKey(from: string, to: DistanceDestination): string {
+  return `${normalizeCityName(from)}→${destKey(to)}`;
 }
 
 async function handleComputeDistance(msg: ContentToBackground): Promise<ComputeDistanceResponse> {

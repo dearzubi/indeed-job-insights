@@ -1,10 +1,35 @@
 import type { Config } from "../shared/config.ts";
 import { sanitizeLocation } from "../shared/location.ts";
-import type { ComputeDistanceResponse } from "../shared/messages.ts";
-import { fetchJobDescription } from "./description-fetch.ts";
+import type { ComputeDistanceResponse, DistanceDestination } from "../shared/messages.ts";
+import { fetchJobDescription, type JobLocation } from "./description-fetch.ts";
 import { inject } from "./injector.ts";
 import { match } from "./matcher.ts";
 import { extractJobKey, SELECTORS } from "./selectors.ts";
+
+// Priority: postcode → lat/long → fullAddress → card text.
+// Postcode is composed with countryCode so Google disambiguates codes that
+// exist in multiple countries (e.g. "SW1A 1AA" vs "80000").
+export function pickDestination(
+  jobLocation: JobLocation | null,
+  cardLocation: string,
+): DistanceDestination | null {
+  if (jobLocation) {
+    if (jobLocation.postalCode) {
+      const addr = jobLocation.countryCode
+        ? `${jobLocation.postalCode}, ${jobLocation.countryCode}`
+        : jobLocation.postalCode;
+      return { address: addr };
+    }
+    if (jobLocation.latitude !== null && jobLocation.longitude !== null) {
+      return { lat: jobLocation.latitude, lng: jobLocation.longitude };
+    }
+    if (jobLocation.fullAddress) {
+      return { address: jobLocation.fullAddress };
+    }
+  }
+  const cleaned = sanitizeLocation(cardLocation);
+  return cleaned ? { address: cleaned } : null;
+}
 
 const visited = new WeakSet<HTMLElement>();
 
@@ -48,12 +73,12 @@ async function processCard(card: HTMLElement, config: Config): Promise<void> {
   let distanceMinutes: number | null = null;
   let distanceError: string | null = null;
 
-  const cleanedTo = sanitizeLocation(structuredLocation);
-  if (cleanedTo) {
+  const destination = pickDestination(desc.ok ? desc.location : null, structuredLocation);
+  if (destination) {
     const response = (await chrome.runtime.sendMessage({
       type: "computeDistance",
       from: config.homeCity,
-      to: cleanedTo,
+      to: destination,
       apiKey: config.googleMapsApiKey,
     })) as ComputeDistanceResponse;
     if (response.ok) distanceMinutes = response.minutes;

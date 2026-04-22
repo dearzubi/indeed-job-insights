@@ -1,7 +1,9 @@
+export type DistanceDestination = { address: string } | { lat: number; lng: number };
+
 export interface ComputeDistanceRequest {
   type: "computeDistance";
   from: string;
-  to: string;
+  to: DistanceDestination;
   apiKey: string;
 }
 

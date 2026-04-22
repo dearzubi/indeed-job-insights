@@ -1,9 +1,14 @@
-import type { ComputeDistanceResponse } from "../shared/messages.ts";
+import type { ComputeDistanceResponse, DistanceDestination } from "../shared/messages.ts";
 
 interface Params {
   from: string;
-  to: string;
+  to: DistanceDestination;
   apiKey: string;
+}
+
+function buildWaypoint(dest: DistanceDestination): object {
+  if ("address" in dest) return { address: dest.address };
+  return { location: { latLng: { latitude: dest.lat, longitude: dest.lng } } };
 }
 
 const ENDPOINT = "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix";
@@ -28,7 +33,7 @@ function parseDurationSeconds(value: string | undefined): number | null {
 export async function fetchDrivingDistance(params: Params): Promise<ComputeDistanceResponse> {
   const body = JSON.stringify({
     origins: [{ waypoint: { address: params.from } }],
-    destinations: [{ waypoint: { address: params.to } }],
+    destinations: [{ waypoint: buildWaypoint(params.to) }],
     travelMode: "DRIVE",
   });
 

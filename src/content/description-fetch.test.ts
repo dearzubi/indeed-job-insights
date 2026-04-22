@@ -83,6 +83,78 @@ describe("fetchJobDescription", () => {
     }
   });
 
+  it("parses JobLocation JSON from the viewjob HTML", async () => {
+    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+      new Response(
+        `<html><body>
+          <div class="jobsearch-JobComponent-description">body</div>
+          <script>var x = {"location":{"__typename":"JobLocation","countryCode":"GB","admin1Code":"ENG","admin2Code":"SE","city":"Woking","postalCode":"GU21 6XB","latitude":51.31903,"longitude":-0.55893,"streetAddress":"1 High St","fullAddress":"1 High St, Woking GU21 6XB","formatted":{"__typename":"FormattedJobLocation","long":"Woking GU21 6XB","short":"Woking"}}};</script>
+        </body></html>`,
+        { headers: { "Content-Type": "text/html" } },
+      ),
+    );
+    const r = await fetchJobDescription("loc1");
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.location).toEqual({
+        postalCode: "GU21 6XB",
+        latitude: 51.31903,
+        longitude: -0.55893,
+        fullAddress: "1 High St, Woking GU21 6XB",
+        countryCode: "GB",
+      });
+    }
+  });
+
+  it("returns null fields when JobLocation has null postalCode/streetAddress", async () => {
+    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+      new Response(
+        `<html><body>
+          <div class="jobsearch-JobComponent-description">body</div>
+          <script>{"location":{"__typename":"JobLocation","countryCode":"GB","city":"Woking","postalCode":null,"latitude":51.31903,"longitude":-0.55893,"streetAddress":null,"fullAddress":"Woking"}}</script>
+        </body></html>`,
+        { headers: { "Content-Type": "text/html" } },
+      ),
+    );
+    const r = await fetchJobDescription("loc2");
+    expect(r.ok).toBe(true);
+    if (r.ok && r.location) {
+      expect(r.location.postalCode).toBeNull();
+      expect(r.location.latitude).toBe(51.31903);
+      expect(r.location.fullAddress).toBe("Woking");
+    }
+  });
+
+  it("returns null location when no JobLocation block present", async () => {
+    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+      new Response(
+        `<html><body><div class="jobsearch-JobComponent-description">body</div></body></html>`,
+        { headers: { "Content-Type": "text/html" } },
+      ),
+    );
+    const r = await fetchJobDescription("loc3");
+    expect(r.ok).toBe(true);
+    if (r.ok) expect(r.location).toBeNull();
+  });
+
+  it("skips unrelated 'location' keys and finds the JobLocation block", async () => {
+    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+      new Response(
+        `<html><body>
+          <div class="jobsearch-JobComponent-description">body</div>
+          <script>var a = {"location":{"href":"http://x"}}; var b = {"location":{"__typename":"JobLocation","countryCode":"US","postalCode":"94103","latitude":37.77,"longitude":-122.41,"fullAddress":"SF"}};</script>
+        </body></html>`,
+        { headers: { "Content-Type": "text/html" } },
+      ),
+    );
+    const r = await fetchJobDescription("loc4");
+    expect(r.ok).toBe(true);
+    if (r.ok && r.location) {
+      expect(r.location.postalCode).toBe("94103");
+      expect(r.location.countryCode).toBe("US");
+    }
+  });
+
   it("handles postedToday: true", async () => {
     (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
       new Response(

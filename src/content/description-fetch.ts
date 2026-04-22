@@ -1,3 +1,11 @@
+export interface JobLocation {
+  postalCode: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  fullAddress: string | null;
+  countryCode: string | null;
+}
+
 export type DescriptionResult =
   | {
       ok: true;
@@ -5,6 +13,7 @@ export type DescriptionResult =
       postedAge: string | null;
       postedToday: boolean;
       numOfCandidates: string | null;
+      location: JobLocation | null;
     }
   | { ok: false; error: string };
 
@@ -29,6 +38,23 @@ export function clearDescriptionCache(): void {
   nextAllowed = 0;
 }
 
+// Balanced-brace scan starting at the first `{` after `afterIdx`, capped to
+// prevent runaway on malformed HTML. Returns the JSON object string or null.
+function extractJsonObject(html: string, afterIdx: number, maxLen = 16_000): string | null {
+  const start = html.indexOf("{", afterIdx);
+  if (start < 0) return null;
+  let depth = 0;
+  for (let i = start; i < html.length && i < start + maxLen; i++) {
+    const c = html[i];
+    if (c === "{") depth++;
+    else if (c === "}") {
+      depth--;
+      if (depth === 0) return html.slice(start, i + 1);
+    }
+  }
+  return null;
+}
+
 interface HiringInsights {
   age: string | null;
   postedToday: boolean;
@@ -37,29 +63,12 @@ interface HiringInsights {
 
 function parseHiringInsights(html: string): HiringInsights {
   const empty: HiringInsights = { age: null, postedToday: false, numOfCandidates: null };
-  const key = '"hiringInsightsModel":';
-  const keyIdx = html.indexOf(key);
+  const keyIdx = html.indexOf('"hiringInsightsModel":');
   if (keyIdx < 0) return empty;
-  const start = html.indexOf("{", keyIdx);
-  if (start < 0) return empty;
-  // Balanced-brace scan, capped to prevent runaway on malformed HTML.
-  const MAX = 16_000;
-  let depth = 0;
-  let end = -1;
-  for (let i = start; i < html.length && i < start + MAX; i++) {
-    const c = html[i];
-    if (c === "{") depth++;
-    else if (c === "}") {
-      depth--;
-      if (depth === 0) {
-        end = i + 1;
-        break;
-      }
-    }
-  }
-  if (end < 0) return empty;
+  const json = extractJsonObject(html, keyIdx);
+  if (!json) return empty;
   try {
-    const parsed = JSON.parse(html.slice(start, end)) as {
+    const parsed = JSON.parse(json) as {
       age?: unknown;
       postedToday?: unknown;
       numOfCandidates?: unknown;
@@ -72,6 +81,42 @@ function parseHiringInsights(html: string): HiringInsights {
   } catch {
     return empty;
   }
+}
+
+// The /viewjob payload embeds the job's structured location as a JSON blob
+// keyed `"location":{ ... "__typename":"JobLocation" ... }`. There can be other
+// unrelated `"location":{` keys in the HTML, so we scan forward until we hit one
+// whose object references `JobLocation`.
+function parseJobLocation(html: string): JobLocation | null {
+  let cursor = 0;
+  while (cursor < html.length) {
+    const idx = html.indexOf('"location":{', cursor);
+    if (idx < 0) return null;
+    const json = extractJsonObject(html, idx);
+    if (!json) return null;
+    if (json.includes("JobLocation")) {
+      try {
+        const parsed = JSON.parse(json) as {
+          postalCode?: unknown;
+          latitude?: unknown;
+          longitude?: unknown;
+          fullAddress?: unknown;
+          countryCode?: unknown;
+        };
+        return {
+          postalCode: typeof parsed.postalCode === "string" ? parsed.postalCode : null,
+          latitude: typeof parsed.latitude === "number" ? parsed.latitude : null,
+          longitude: typeof parsed.longitude === "number" ? parsed.longitude : null,
+          fullAddress: typeof parsed.fullAddress === "string" ? parsed.fullAddress : null,
+          countryCode: typeof parsed.countryCode === "string" ? parsed.countryCode : null,
+        };
+      } catch {
+        return null;
+      }
+    }
+    cursor = idx + 12;
+  }
+  return null;
 }
 
 export async function fetchJobDescription(jobKey: string): Promise<DescriptionResult> {
@@ -106,6 +151,7 @@ export async function fetchJobDescription(jobKey: string): Promise<DescriptionRe
   const descEl = doc.querySelector(".jobsearch-JobComponent-description, #jobDescriptionText");
   const fullText = descEl?.textContent?.trim() ?? "";
   const insights = parseHiringInsights(html);
+  const jobLocation = parseJobLocation(html);
 
   const result: DescriptionResult = {
     ok: true,
@@ -113,6 +159,7 @@ export async function fetchJobDescription(jobKey: string): Promise<DescriptionRe
     postedAge: insights.age,
     postedToday: insights.postedToday,
     numOfCandidates: insights.numOfCandidates,
+    location: jobLocation,
   };
   cache.set(jobKey, result);
   return result;
