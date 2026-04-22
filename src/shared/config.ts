@@ -3,6 +3,7 @@ export interface Config {
   homeCity: string;
   nearbyCities: string[];
   keywords: string[];
+  excludedKeywords: string[];
   googleMapsApiKey: string;
   dimZeroMatch: boolean;
   pausedTabs: Record<number, true>;
@@ -13,6 +14,7 @@ export const DEFAULT_CONFIG: Config = {
   homeCity: "",
   nearbyCities: [],
   keywords: [],
+  excludedKeywords: [],
   googleMapsApiKey: "",
   dimZeroMatch: true,
   pausedTabs: {},

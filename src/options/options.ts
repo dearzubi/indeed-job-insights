@@ -11,6 +11,7 @@ const form = $<HTMLFormElement>("form");
 const homeCity = $<HTMLInputElement>("homeCity");
 const nearbyCities = $<HTMLTextAreaElement>("nearbyCities");
 const keywords = $<HTMLTextAreaElement>("keywords");
+const excludedKeywords = $<HTMLTextAreaElement>("excludedKeywords");
 const apiKey = $<HTMLInputElement>("googleMapsApiKey");
 const dim = $<HTMLInputElement>("dimZeroMatch");
 const status = $<HTMLSpanElement>("status");
@@ -20,6 +21,7 @@ async function hydrate(): Promise<void> {
   homeCity.value = cfg.homeCity;
   nearbyCities.value = cfg.nearbyCities.join("\n");
   keywords.value = cfg.keywords.join("\n");
+  excludedKeywords.value = cfg.excludedKeywords.join("\n");
   apiKey.value = cfg.googleMapsApiKey;
   dim.checked = cfg.dimZeroMatch;
 }
@@ -58,6 +60,9 @@ form.addEventListener("submit", async (e) => {
       .map((c) => normalizeCityName(c))
       .filter(Boolean),
     keywords: parseList(keywords.value)
+      .map((k) => normalizeKeyword(k))
+      .filter(Boolean),
+    excludedKeywords: parseList(excludedKeywords.value)
       .map((k) => normalizeKeyword(k))
       .filter(Boolean),
     googleMapsApiKey: key,

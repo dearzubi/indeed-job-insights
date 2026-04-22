@@ -53,6 +53,14 @@ export function inject(card: HTMLElement, result: MatchResult, ctx: InjectContex
     pillsRow.appendChild(kwPill);
   }
 
+  if (result.excludedHitsCount > 0) {
+    const excPill = document.createElement("span");
+    excPill.className = "ext-pill ext-pill-excluded";
+    const n = result.excludedHitsCount;
+    excPill.textContent = `⊘ ${n} excluded hit${n === 1 ? "" : "s"}`;
+    pillsRow.appendChild(excPill);
+  }
+
   titleHost.parentElement?.insertBefore(pillsRow, titleHost);
   nodes.push(pillsRow);
 

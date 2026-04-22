@@ -33,6 +33,7 @@ describe("inject / remove", () => {
         { term: "Python", start: 0, end: 6 },
         { term: "React", start: 11, end: 16 },
       ],
+      excludedHitsCount: 0,
       isZeroMatch: false,
       leftBorderColor: "green",
     };
@@ -52,6 +53,7 @@ describe("inject / remove", () => {
       cityPillLabel: null,
       workModePillLabel: "🏠 Remote",
       keywordHits: [],
+      excludedHitsCount: 0,
       isZeroMatch: false,
       leftBorderColor: "blue",
     };
@@ -68,6 +70,7 @@ describe("inject / remove", () => {
       cityPillLabel: null,
       workModePillLabel: "🏙️ Onsite",
       keywordHits: [],
+      excludedHitsCount: 0,
       isZeroMatch: true,
       leftBorderColor: null,
     };
@@ -83,6 +86,7 @@ describe("inject / remove", () => {
       cityPillLabel: "📍 Home city match",
       workModePillLabel: "🏙️ Onsite",
       keywordHits: [],
+      excludedHitsCount: 0,
       isZeroMatch: false,
       leftBorderColor: "purple",
     };
@@ -101,6 +105,7 @@ describe("inject / remove", () => {
       cityPillLabel: null,
       workModePillLabel: "🏙️ Onsite",
       keywordHits: [],
+      excludedHitsCount: 0,
       isZeroMatch: true,
       leftBorderColor: null,
     };
@@ -119,6 +124,7 @@ describe("inject / remove", () => {
       cityPillLabel: null,
       workModePillLabel: "🏢 Hybrid",
       keywordHits: [],
+      excludedHitsCount: 0,
       isZeroMatch: true,
       leftBorderColor: null,
     };
@@ -135,6 +141,7 @@ describe("inject / remove", () => {
       cityPillLabel: null,
       workModePillLabel: "🏙️ Onsite",
       keywordHits: [],
+      excludedHitsCount: 0,
       isZeroMatch: true,
       leftBorderColor: null,
     };
@@ -150,6 +157,7 @@ describe("inject / remove", () => {
       cityPillLabel: null,
       workModePillLabel: "🏙️ Onsite",
       keywordHits: [],
+      excludedHitsCount: 0,
       isZeroMatch: true,
       leftBorderColor: null,
     };
@@ -165,10 +173,60 @@ describe("inject / remove", () => {
       cityPillLabel: null,
       workModePillLabel: "🏙️ Onsite",
       keywordHits: [],
+      excludedHitsCount: 0,
       isZeroMatch: true,
       leftBorderColor: null,
     };
     inject(card, result, { distanceMinutes: 90, distanceError: null, dimZeroMatch: false });
     expect(card.querySelector(".ext-distance")?.textContent).toBe("🚗 1h 30m");
+  });
+
+  it("renders excluded hits pill when count > 0", () => {
+    const card = makeCard();
+    const result: MatchResult = {
+      cityHit: "none",
+      workMode: "onsite",
+      cityPillLabel: null,
+      workModePillLabel: "🏙️ Onsite",
+      keywordHits: [],
+      excludedHitsCount: 3,
+      isZeroMatch: true,
+      leftBorderColor: null,
+    };
+    inject(card, result, { distanceMinutes: null, distanceError: null, dimZeroMatch: false });
+    const pill = card.querySelector(".ext-pill-excluded");
+    expect(pill?.textContent).toBe("⊘ 3 excluded hits");
+  });
+
+  it("excluded pill singular grammar at count 1", () => {
+    const card = makeCard();
+    const result: MatchResult = {
+      cityHit: "none",
+      workMode: "onsite",
+      cityPillLabel: null,
+      workModePillLabel: "🏙️ Onsite",
+      keywordHits: [],
+      excludedHitsCount: 1,
+      isZeroMatch: true,
+      leftBorderColor: null,
+    };
+    inject(card, result, { distanceMinutes: null, distanceError: null, dimZeroMatch: false });
+    expect(card.querySelector(".ext-pill-excluded")?.textContent).toBe("⊘ 1 excluded hit");
+  });
+
+  it("no excluded pill when count is 0", () => {
+    const card = makeCard();
+    const result: MatchResult = {
+      cityHit: "none",
+      workMode: "onsite",
+      cityPillLabel: null,
+      workModePillLabel: "🏙️ Onsite",
+      keywordHits: [],
+      excludedHitsCount: 0,
+      isZeroMatch: true,
+      leftBorderColor: null,
+    };
+    inject(card, result, { distanceMinutes: null, distanceError: null, dimZeroMatch: false });
+    expect(card.querySelector(".ext-pill-excluded")).toBeNull();
   });
 });

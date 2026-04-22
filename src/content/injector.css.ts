@@ -6,6 +6,7 @@ export const INJECTOR_CSS = `
 .ext-pill-hybrid { background: #ecfccb; color: #4d7c0f; }
 .ext-pill-onsite { background: #f1f5f9; color: #475569; }
 .ext-pill-keywords { background: #dcfce7; color: #166534; }
+.ext-pill-excluded { background: #fee2e2; color: #991b1b; position: relative; z-index: 2; }
 .ext-distance { display: inline-flex; align-items: center; gap: 4px; background: #f0f7ff; color: #2557a7; font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 10px; border: 1px solid #c7dcf7; margin-left: 8px; position: relative; z-index: 2; }
 .ext-distance-far { background: #fff4e6; color: #9a4c00; border-color: #ffd9a8; }
 .ext-distance-err { background: #fff1f1; color: #991b1b; border-color: #fecaca; }

@@ -209,3 +209,44 @@ describe("match — border color with work mode", () => {
     expect(r.isZeroMatch).toBe(true);
   });
 });
+
+describe("match — excluded keywords", () => {
+  const cfg = { ...baseConfig, keywords: ["python"], excludedKeywords: ["php", "on-site only"] };
+
+  it("counts excluded keyword occurrences in fullText", () => {
+    const r = match("Must know PHP. On-site only. Some PHP experience preferred.", "London", cfg);
+    expect(r.excludedHitsCount).toBe(3);
+  });
+  it("returns 0 when no excluded keywords match", () => {
+    const r = match("Python role with clean stack", "London", cfg);
+    expect(r.excludedHitsCount).toBe(0);
+  });
+  it("returns 0 when excludedKeywords list is empty", () => {
+    const r = match("php php php", "London", { ...cfg, excludedKeywords: [] });
+    expect(r.excludedHitsCount).toBe(0);
+  });
+  it("excluded hits do NOT make a card zero-match", () => {
+    const r = match("PHP role requiring PHP experience", "Markham, ON", {
+      ...cfg,
+      keywords: ["python"],
+    });
+    expect(r.excludedHitsCount).toBe(2);
+    expect(r.keywordHits).toEqual([]);
+    expect(r.isZeroMatch).toBe(true); // because keywords configured AND 0 positive hits
+  });
+  it("excluded hits do NOT rescue a card from zero-match", () => {
+    // A card with excluded hits and no positive hits is still zero-match
+    const r = match("WordPress PHP developer role", "Markham, ON", {
+      ...cfg,
+      keywords: ["python"],
+    });
+    expect(r.excludedHitsCount).toBe(1);
+    expect(r.isZeroMatch).toBe(true);
+  });
+  it("a positive keyword hit un-dims the card regardless of excluded hits", () => {
+    const r = match("Python role that also needs some PHP", "Markham, ON", cfg);
+    expect(r.keywordHits.length).toBeGreaterThan(0);
+    expect(r.excludedHitsCount).toBeGreaterThan(0);
+    expect(r.isZeroMatch).toBe(false);
+  });
+});

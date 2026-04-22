@@ -17,6 +17,7 @@ export interface MatchResult {
   cityPillLabel: string | null;
   workModePillLabel: string;
   keywordHits: KeywordHit[];
+  excludedHitsCount: number;
   isZeroMatch: boolean;
   leftBorderColor: "green" | "blue" | "purple" | null;
 }
@@ -65,6 +66,12 @@ export function match(fullText: string, structuredLocation: string, config: Conf
     }
   }
 
+  let excludedHitsCount = 0;
+  if (config.excludedKeywords.length > 0) {
+    const re = buildWholeWordRegex(config.excludedKeywords);
+    for (const _m of fullText.matchAll(re)) excludedHitsCount++;
+  }
+
   const workMode = detectWorkMode(structuredLocation);
   const cityPillLabel = makeCityPillLabel(cityHit, fullText, config);
   const workModePillLabel = makeWorkModePillLabel(workMode);
@@ -84,6 +91,7 @@ export function match(fullText: string, structuredLocation: string, config: Conf
     cityPillLabel,
     workModePillLabel,
     keywordHits,
+    excludedHitsCount,
     isZeroMatch,
     leftBorderColor,
   };
