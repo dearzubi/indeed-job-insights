@@ -6,6 +6,7 @@ export interface Config {
   excludedKeywords: string[];
   googleMapsApiKey: string;
   dimZeroMatch: boolean;
+  dimNegativeMatch: boolean;
   pausedTabs: Record<number, true>;
 }
 
@@ -17,6 +18,7 @@ export const DEFAULT_CONFIG: Config = {
   excludedKeywords: [],
   googleMapsApiKey: "",
   dimZeroMatch: true,
+  dimNegativeMatch: true,
   pausedTabs: {},
 };
 

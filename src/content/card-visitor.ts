@@ -89,6 +89,7 @@ async function processCard(card: HTMLElement, config: Config): Promise<void> {
     distanceMinutes,
     distanceError,
     dimZeroMatch: config.dimZeroMatch,
+    dimNegativeMatch: config.dimNegativeMatch,
     excludedKeywords: config.excludedKeywords,
     postedAge,
     postedToday,

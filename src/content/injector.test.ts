@@ -40,6 +40,7 @@ describe("inject / remove", () => {
       distanceMinutes: 42,
       distanceError: null,
       dimZeroMatch: false,
+      dimNegativeMatch: false,
       excludedKeywords: [],
       postedAge: null,
       postedToday: false,
@@ -66,6 +67,7 @@ describe("inject / remove", () => {
       distanceMinutes: null,
       distanceError: null,
       dimZeroMatch: false,
+      dimNegativeMatch: false,
       excludedKeywords: [],
       postedAge: null,
       postedToday: false,
@@ -75,6 +77,7 @@ describe("inject / remove", () => {
       distanceMinutes: null,
       distanceError: null,
       dimZeroMatch: false,
+      dimNegativeMatch: false,
       excludedKeywords: [],
       postedAge: null,
       postedToday: false,
@@ -98,6 +101,7 @@ describe("inject / remove", () => {
       distanceMinutes: 51,
       distanceError: null,
       dimZeroMatch: true,
+      dimNegativeMatch: false,
       excludedKeywords: [],
       postedAge: null,
       postedToday: false,
@@ -121,6 +125,7 @@ describe("inject / remove", () => {
       distanceMinutes: 8,
       distanceError: null,
       dimZeroMatch: false,
+      dimNegativeMatch: false,
       excludedKeywords: [],
       postedAge: null,
       postedToday: false,
@@ -146,6 +151,7 @@ describe("inject / remove", () => {
       distanceMinutes: null,
       distanceError: null,
       dimZeroMatch: false,
+      dimNegativeMatch: false,
       excludedKeywords: [],
       postedAge: null,
       postedToday: false,
@@ -172,6 +178,7 @@ describe("inject / remove", () => {
       distanceMinutes: null,
       distanceError: null,
       dimZeroMatch: false,
+      dimNegativeMatch: false,
       excludedKeywords: [],
       postedAge: null,
       postedToday: false,
@@ -196,6 +203,7 @@ describe("inject / remove", () => {
       distanceMinutes: 42,
       distanceError: null,
       dimZeroMatch: false,
+      dimNegativeMatch: false,
       excludedKeywords: [],
       postedAge: null,
       postedToday: false,
@@ -219,6 +227,7 @@ describe("inject / remove", () => {
       distanceMinutes: 60,
       distanceError: null,
       dimZeroMatch: false,
+      dimNegativeMatch: false,
       excludedKeywords: [],
       postedAge: null,
       postedToday: false,
@@ -242,6 +251,7 @@ describe("inject / remove", () => {
       distanceMinutes: 90,
       distanceError: null,
       dimZeroMatch: false,
+      dimNegativeMatch: false,
       excludedKeywords: [],
       postedAge: null,
       postedToday: false,
@@ -265,6 +275,7 @@ describe("inject / remove", () => {
       distanceMinutes: null,
       distanceError: null,
       dimZeroMatch: false,
+      dimNegativeMatch: false,
       excludedKeywords: [],
       postedAge: null,
       postedToday: false,
@@ -289,6 +300,7 @@ describe("inject / remove", () => {
       distanceMinutes: null,
       distanceError: null,
       dimZeroMatch: false,
+      dimNegativeMatch: false,
       excludedKeywords: [],
       postedAge: null,
       postedToday: false,
@@ -312,6 +324,7 @@ describe("inject / remove", () => {
       distanceMinutes: null,
       distanceError: null,
       dimZeroMatch: false,
+      dimNegativeMatch: false,
       excludedKeywords: [],
       postedAge: null,
       postedToday: false,
@@ -335,6 +348,7 @@ describe("inject / remove", () => {
       distanceMinutes: null,
       distanceError: null,
       dimZeroMatch: false,
+      dimNegativeMatch: false,
       excludedKeywords: [],
       postedAge: null,
       postedToday: false,
@@ -366,6 +380,7 @@ describe("inject / remove", () => {
       distanceMinutes: null,
       distanceError: null,
       dimZeroMatch: false,
+      dimNegativeMatch: false,
       excludedKeywords: ["php"],
       postedAge: null,
       postedToday: false,
@@ -398,6 +413,7 @@ describe("inject / remove", () => {
       distanceMinutes: null,
       distanceError: null,
       dimZeroMatch: false,
+      dimNegativeMatch: false,
       excludedKeywords: ["php"],
       postedAge: null,
       postedToday: false,
@@ -422,6 +438,7 @@ describe("inject / remove", () => {
       distanceMinutes: null,
       distanceError: null,
       dimZeroMatch: false,
+      dimNegativeMatch: false,
       excludedKeywords: [],
       postedAge: "8 days ago",
       postedToday: false,
@@ -445,6 +462,7 @@ describe("inject / remove", () => {
       distanceMinutes: null,
       distanceError: null,
       dimZeroMatch: false,
+      dimNegativeMatch: false,
       excludedKeywords: [],
       postedAge: "anything",
       postedToday: true,
@@ -468,6 +486,7 @@ describe("inject / remove", () => {
       distanceMinutes: null,
       distanceError: null,
       dimZeroMatch: false,
+      dimNegativeMatch: false,
       excludedKeywords: [],
       postedAge: null,
       postedToday: false,
@@ -491,6 +510,7 @@ describe("inject / remove", () => {
       distanceMinutes: null,
       distanceError: null,
       dimZeroMatch: false,
+      dimNegativeMatch: false,
       excludedKeywords: [],
       postedAge: null,
       postedToday: false,
@@ -514,11 +534,87 @@ describe("inject / remove", () => {
       distanceMinutes: null,
       distanceError: null,
       dimZeroMatch: false,
+      dimNegativeMatch: false,
       excludedKeywords: [],
       postedAge: null,
       postedToday: false,
       organicApplyStarts: 0,
     });
     expect(card.querySelector(".ext-pill-interested")).toBeNull();
+  });
+
+  it("dims when dimNegativeMatch is on and excluded hits outnumber keyword hits", () => {
+    const card = makeCard();
+    const result: MatchResult = {
+      cityHit: "none",
+      workMode: "onsite",
+      cityPillLabel: null,
+      workModePillLabel: "🏙️ Onsite",
+      keywordHits: [{ term: "python", start: 0, end: 6 }],
+      excludedHitsCount: 3,
+      isZeroMatch: false,
+    };
+    inject(card, result, {
+      distanceMinutes: null,
+      distanceError: null,
+      dimZeroMatch: false,
+      dimNegativeMatch: true,
+      excludedKeywords: ["php"],
+      postedAge: null,
+      postedToday: false,
+      organicApplyStarts: null,
+    });
+    expect(card.classList.contains("ext-dim")).toBe(true);
+  });
+
+  it("does not dim when dimNegativeMatch is on but keyword hits >= excluded hits", () => {
+    const card = makeCard();
+    const result: MatchResult = {
+      cityHit: "none",
+      workMode: "onsite",
+      cityPillLabel: null,
+      workModePillLabel: "🏙️ Onsite",
+      keywordHits: [
+        { term: "python", start: 0, end: 6 },
+        { term: "react", start: 11, end: 16 },
+      ],
+      excludedHitsCount: 2,
+      isZeroMatch: false,
+    };
+    inject(card, result, {
+      distanceMinutes: null,
+      distanceError: null,
+      dimZeroMatch: false,
+      dimNegativeMatch: true,
+      excludedKeywords: ["php"],
+      postedAge: null,
+      postedToday: false,
+      organicApplyStarts: null,
+    });
+    expect(card.classList.contains("ext-dim")).toBe(false);
+  });
+
+  it("does not dim when dimNegativeMatch is off even with dominant excluded hits", () => {
+    const card = makeCard();
+    const result: MatchResult = {
+      cityHit: "none",
+      workMode: "onsite",
+      cityPillLabel: null,
+      workModePillLabel: "🏙️ Onsite",
+      keywordHits: [],
+      excludedHitsCount: 4,
+      isZeroMatch: false,
+    };
+    inject(card, result, {
+      distanceMinutes: null,
+      distanceError: null,
+      dimZeroMatch: false,
+      dimNegativeMatch: false,
+      excludedKeywords: ["php"],
+      postedAge: null,
+      postedToday: false,
+      organicApplyStarts: null,
+    });
+    expect(card.classList.contains("ext-dim")).toBe(false);
   });
 });

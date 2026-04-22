@@ -7,6 +7,7 @@ export interface InjectContext {
   distanceMinutes: number | null;
   distanceError: string | null;
   dimZeroMatch: boolean;
+  dimNegativeMatch: boolean;
   excludedKeywords: string[];
   postedAge: string | null;
   postedToday: boolean;
@@ -129,7 +130,10 @@ export function inject(card: HTMLElement, result: MatchResult, ctx: InjectContex
     }
   }
 
-  card.classList.toggle("ext-dim", result.isZeroMatch && ctx.dimZeroMatch);
+  const dimForZero = result.isZeroMatch && ctx.dimZeroMatch;
+  const dimForNegative =
+    ctx.dimNegativeMatch && result.excludedHitsCount > result.keywordHits.length;
+  card.classList.toggle("ext-dim", dimForZero || dimForNegative);
 
   injected.set(card, nodes);
 }

@@ -14,6 +14,7 @@ const keywords = $<HTMLTextAreaElement>("keywords");
 const excludedKeywords = $<HTMLTextAreaElement>("excludedKeywords");
 const apiKey = $<HTMLInputElement>("googleMapsApiKey");
 const dim = $<HTMLInputElement>("dimZeroMatch");
+const dimNeg = $<HTMLInputElement>("dimNegativeMatch");
 const status = $<HTMLSpanElement>("status");
 
 async function hydrate(): Promise<void> {
@@ -24,6 +25,7 @@ async function hydrate(): Promise<void> {
   excludedKeywords.value = cfg.excludedKeywords.join("\n");
   apiKey.value = cfg.googleMapsApiKey;
   dim.checked = cfg.dimZeroMatch;
+  dimNeg.checked = cfg.dimNegativeMatch;
 }
 
 function parseList(raw: string): string[] {
@@ -67,6 +69,7 @@ form.addEventListener("submit", async (e) => {
       .filter(Boolean),
     googleMapsApiKey: key,
     dimZeroMatch: dim.checked,
+    dimNegativeMatch: dimNeg.checked,
   });
   status.textContent = "Saved.";
 });

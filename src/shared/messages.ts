@@ -32,7 +32,7 @@ export type ComputeDistanceResponse = ComputeDistanceSuccess | ComputeDistanceEr
 
 export interface SetToggleMessage {
   type: "setToggle";
-  key: "dimZeroMatch" | "paused";
+  key: "dimZeroMatch" | "dimNegativeMatch" | "paused";
   value: boolean;
 }
 
