@@ -21,7 +21,6 @@
     "rules": {
       "recommended": true,
       "style": {
-        "useSortedClasses": "off",
         "noUnusedTemplateLiteral": "error"
       },
       "correctness": {
