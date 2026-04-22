@@ -1,4 +1,5 @@
 import type { Config } from "../shared/config.ts";
+import { sanitizeLocation } from "../shared/location.ts";
 import type { ComputeDistanceResponse } from "../shared/messages.ts";
 import { fetchJobDescription } from "./description-fetch.ts";
 import { inject } from "./injector.ts";
@@ -34,11 +35,12 @@ async function processCard(card: HTMLElement, config: Config): Promise<void> {
   let distanceMinutes: number | null = null;
   let distanceError: string | null = null;
 
-  if (desc.structuredLocation && !isRemoteText(desc.structuredLocation)) {
+  const cleanedTo = sanitizeLocation(desc.structuredLocation);
+  if (cleanedTo) {
     const response = (await chrome.runtime.sendMessage({
       type: "computeDistance",
       from: config.homeCity,
-      to: desc.structuredLocation,
+      to: cleanedTo,
       apiKey: config.googleMapsApiKey,
     })) as ComputeDistanceResponse;
     if (response.ok) distanceMinutes = response.minutes;
@@ -50,8 +52,4 @@ async function processCard(card: HTMLElement, config: Config): Promise<void> {
     distanceError,
     dimZeroMatch: config.dimZeroMatch,
   });
-}
-
-function isRemoteText(s: string): boolean {
-  return /remote/i.test(s);
 }

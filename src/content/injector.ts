@@ -87,10 +87,14 @@ export function remove(card: HTMLElement): void {
     for (const n of nodes) n.remove();
     injected.delete(card);
   }
-  for (const cls of BORDER_CLASSES) {
+  // Safety net: clear any stray decorations not tracked by the WeakMap
+  // (e.g., after a DOM swap that changed the card's element identity).
+  for (const stray of Array.from(card.querySelectorAll(".ext-pills, .ext-distance"))) {
+    stray.remove();
+  }
+  for (const cls of ["ext-border-green", "ext-border-blue", "ext-border-purple", "ext-dim"]) {
     card.classList.remove(cls);
   }
-  card.classList.remove("ext-dim");
   for (const hit of Array.from(card.querySelectorAll(".ext-kw-hit"))) {
     const parent = hit.parentNode;
     while (hit.firstChild) parent?.insertBefore(hit.firstChild, hit);

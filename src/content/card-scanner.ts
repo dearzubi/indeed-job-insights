@@ -12,7 +12,9 @@ export function startScanning(config: Config): () => void {
   const registered = new WeakSet<HTMLElement>();
 
   const registerAll = (): void => {
-    for (const card of Array.from(container.querySelectorAll<HTMLElement>(SELECTORS.jobCard))) {
+    const candidates = Array.from(container.querySelectorAll<HTMLElement>(SELECTORS.jobCard));
+    const outermost = outermostOnly(candidates);
+    for (const card of outermost) {
       if (registered.has(card)) continue;
       registered.add(card);
       observeCard(card, config);
@@ -25,4 +27,14 @@ export function startScanning(config: Config): () => void {
   mo.observe(container, { childList: true, subtree: true });
 
   return () => mo.disconnect();
+}
+
+/**
+ * Given a list of candidate card elements, drop any that is a descendant of
+ * another candidate in the same list. Solves the case where Indeed's DOM has
+ * nested wrappers that both match our selector (e.g., `<li.eu4oa1w0>` around
+ * `<div.job_seen_beacon>`), which otherwise causes duplicate decoration.
+ */
+export function outermostOnly(elements: HTMLElement[]): HTMLElement[] {
+  return elements.filter((el) => !elements.some((other) => other !== el && other.contains(el)));
 }
