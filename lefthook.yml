@@ -1,0 +1,14 @@
+pre-commit:
+  parallel: true
+  commands:
+    biome:
+      glob: "*.{ts,js,mjs,json,jsonc}"
+      run: pnpm biome check --staged --error-on-warnings --no-errors-on-unmatched {staged_files}
+    tsc:
+      glob: "*.ts"
+      run: pnpm tsc --noEmit
+
+commit-msg:
+  commands:
+    commitlint:
+      run: pnpm commitlint --edit {1}
