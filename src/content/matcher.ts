@@ -19,7 +19,6 @@ export interface MatchResult {
   keywordHits: KeywordHit[];
   excludedHitsCount: number;
   isZeroMatch: boolean;
-  leftBorderColor: "green" | "blue" | "purple" | null;
 }
 
 function escapeRegex(s: string): string {
@@ -75,7 +74,6 @@ export function match(fullText: string, structuredLocation: string, config: Conf
   const workMode = detectWorkMode(structuredLocation);
   const cityPillLabel = makeCityPillLabel(cityHit, fullText, config);
   const workModePillLabel = makeWorkModePillLabel(workMode);
-  const leftBorderColor = makeBorderColor(cityHit, workMode, keywordHits.length);
   // When the user has configured keywords, they are the primary relevance signal:
   // any card with zero keyword hits is zero-match regardless of city/workMode. When
   // no keywords are configured, fall back to location-based dimming so "survey a city"
@@ -93,7 +91,6 @@ export function match(fullText: string, structuredLocation: string, config: Conf
     keywordHits,
     excludedHitsCount,
     isZeroMatch,
-    leftBorderColor,
   };
 }
 
@@ -125,18 +122,6 @@ function makeWorkModePillLabel(mode: WorkMode): string {
     case "onsite":
       return "🏙️ Onsite";
   }
-}
-
-function makeBorderColor(
-  cityHit: CityHit,
-  workMode: WorkMode,
-  keywordHitCount: number,
-): "green" | "blue" | "purple" | null {
-  if (workMode === "remote") return "blue";
-  if (cityHit === "home") return "purple";
-  if (cityHit === "home-mentioned" || cityHit === "nearby") return "green";
-  if (cityHit === "none" && keywordHitCount > 0) return "green";
-  return null;
 }
 
 function capitalize(s: string): string {

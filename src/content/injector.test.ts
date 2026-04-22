@@ -35,7 +35,6 @@ describe("inject / remove", () => {
       ],
       excludedHitsCount: 0,
       isZeroMatch: false,
-      leftBorderColor: "green",
     };
     inject(card, result, {
       distanceMinutes: 42,
@@ -50,7 +49,6 @@ describe("inject / remove", () => {
     expect(card.querySelectorAll(".ext-pill").length).toBeGreaterThanOrEqual(2);
     expect(card.querySelector(".ext-distance")?.textContent).toContain("42");
     expect(card.querySelectorAll(".ext-kw-hit").length).toBe(2);
-    expect(card.classList.contains("ext-border-green")).toBe(true);
   });
 
   it("is idempotent — re-injecting replaces existing decorations", () => {
@@ -63,7 +61,6 @@ describe("inject / remove", () => {
       keywordHits: [],
       excludedHitsCount: 0,
       isZeroMatch: false,
-      leftBorderColor: "blue",
     };
     inject(card, result, {
       distanceMinutes: null,
@@ -96,7 +93,6 @@ describe("inject / remove", () => {
       keywordHits: [],
       excludedHitsCount: 0,
       isZeroMatch: true,
-      leftBorderColor: null,
     };
     inject(card, result, {
       distanceMinutes: 51,
@@ -120,7 +116,6 @@ describe("inject / remove", () => {
       keywordHits: [],
       excludedHitsCount: 0,
       isZeroMatch: false,
-      leftBorderColor: "purple",
     };
     inject(card, result, {
       distanceMinutes: 8,
@@ -133,7 +128,6 @@ describe("inject / remove", () => {
     });
     remove(card);
     expect(card.querySelector(".ext-pills")).toBeNull();
-    expect(card.classList.contains("ext-border-purple")).toBe(false);
     expect(card.classList.contains("ext-dim")).toBe(false);
   });
 
@@ -147,7 +141,6 @@ describe("inject / remove", () => {
       keywordHits: [],
       excludedHitsCount: 0,
       isZeroMatch: true,
-      leftBorderColor: null,
     };
     inject(card, result, {
       distanceMinutes: null,
@@ -174,7 +167,6 @@ describe("inject / remove", () => {
       keywordHits: [],
       excludedHitsCount: 0,
       isZeroMatch: true,
-      leftBorderColor: null,
     };
     inject(card, result, {
       distanceMinutes: null,
@@ -199,7 +191,6 @@ describe("inject / remove", () => {
       keywordHits: [],
       excludedHitsCount: 0,
       isZeroMatch: true,
-      leftBorderColor: null,
     };
     inject(card, result, {
       distanceMinutes: 42,
@@ -223,7 +214,6 @@ describe("inject / remove", () => {
       keywordHits: [],
       excludedHitsCount: 0,
       isZeroMatch: true,
-      leftBorderColor: null,
     };
     inject(card, result, {
       distanceMinutes: 60,
@@ -247,7 +237,6 @@ describe("inject / remove", () => {
       keywordHits: [],
       excludedHitsCount: 0,
       isZeroMatch: true,
-      leftBorderColor: null,
     };
     inject(card, result, {
       distanceMinutes: 90,
@@ -271,7 +260,6 @@ describe("inject / remove", () => {
       keywordHits: [],
       excludedHitsCount: 3,
       isZeroMatch: true,
-      leftBorderColor: null,
     };
     inject(card, result, {
       distanceMinutes: null,
@@ -296,7 +284,6 @@ describe("inject / remove", () => {
       keywordHits: [],
       excludedHitsCount: 1,
       isZeroMatch: true,
-      leftBorderColor: null,
     };
     inject(card, result, {
       distanceMinutes: null,
@@ -320,7 +307,6 @@ describe("inject / remove", () => {
       keywordHits: [],
       excludedHitsCount: 0,
       isZeroMatch: true,
-      leftBorderColor: null,
     };
     inject(card, result, {
       distanceMinutes: null,
@@ -344,7 +330,6 @@ describe("inject / remove", () => {
       keywordHits: [{ term: "Python", start: 0, end: 6 }],
       excludedHitsCount: 0,
       isZeroMatch: false,
-      leftBorderColor: null,
     };
     inject(card, result, {
       distanceMinutes: null,
@@ -376,7 +361,6 @@ describe("inject / remove", () => {
       keywordHits: [],
       excludedHitsCount: 1,
       isZeroMatch: true,
-      leftBorderColor: null,
     };
     inject(card, result, {
       distanceMinutes: null,
@@ -409,7 +393,6 @@ describe("inject / remove", () => {
       keywordHits: [{ term: "Python", start: 7, end: 13 }],
       excludedHitsCount: 1,
       isZeroMatch: false,
-      leftBorderColor: null,
     };
     inject(card, result, {
       distanceMinutes: null,
@@ -434,7 +417,6 @@ describe("inject / remove", () => {
       keywordHits: [],
       excludedHitsCount: 0,
       isZeroMatch: true,
-      leftBorderColor: null,
     };
     inject(card, result, {
       distanceMinutes: null,
@@ -458,7 +440,6 @@ describe("inject / remove", () => {
       keywordHits: [],
       excludedHitsCount: 0,
       isZeroMatch: true,
-      leftBorderColor: null,
     };
     inject(card, result, {
       distanceMinutes: null,
@@ -482,7 +463,6 @@ describe("inject / remove", () => {
       keywordHits: [],
       excludedHitsCount: 0,
       isZeroMatch: true,
-      leftBorderColor: null,
     };
     inject(card, result, {
       distanceMinutes: null,
@@ -506,7 +486,6 @@ describe("inject / remove", () => {
       keywordHits: [],
       excludedHitsCount: 0,
       isZeroMatch: true,
-      leftBorderColor: null,
     };
     inject(card, result, {
       distanceMinutes: null,
@@ -530,7 +509,6 @@ describe("inject / remove", () => {
       keywordHits: [],
       excludedHitsCount: 0,
       isZeroMatch: true,
-      leftBorderColor: null,
     };
     inject(card, result, {
       distanceMinutes: null,
@@ -554,7 +532,6 @@ describe("inject / remove", () => {
       keywordHits: [],
       excludedHitsCount: 0,
       isZeroMatch: true,
-      leftBorderColor: null,
     };
     inject(card, result, {
       distanceMinutes: null,

@@ -27,8 +27,6 @@ function formatApplicantsLabel(ctx: InjectContext): string | null {
   return `👥 ${raw} applicant${plural ? "s" : ""}`;
 }
 
-const BORDER_CLASSES = ["ext-border-green", "ext-border-blue", "ext-border-purple"] as const;
-
 const injected = new WeakMap<HTMLElement, HTMLElement[]>();
 
 function formatMinutes(total: number): string {
@@ -44,7 +42,12 @@ export function inject(card: HTMLElement, result: MatchResult, ctx: InjectContex
 
   const nodes: HTMLElement[] = [];
 
-  const titleHost = card.querySelector<HTMLElement>(".jobTitle") ?? card;
+  // Single footer appended at the end of the card so our decorations render
+  // after Indeed's own content (title/company/CTA rows) rather than shoving
+  // their layout down.
+  const footer = document.createElement("div");
+  footer.className = "ext-footer";
+
   const pillsRow = document.createElement("div");
   pillsRow.className = "ext-pills";
 
@@ -95,27 +98,33 @@ export function inject(card: HTMLElement, result: MatchResult, ctx: InjectContex
     pillsRow.appendChild(p);
   }
 
-  titleHost.parentElement?.insertBefore(pillsRow, titleHost);
-  nodes.push(pillsRow);
+  footer.appendChild(pillsRow);
 
-  // Distance badge on location line
-  const locEl = card.querySelector<HTMLElement>(SELECTORS.locationText);
-  if (locEl) {
-    const badge = document.createElement("span");
-    if (ctx.distanceError) {
-      badge.className = "ext-distance ext-distance-err";
-      badge.textContent = "⚠";
-      badge.title = ctx.distanceError;
-    } else if (ctx.distanceMinutes !== null) {
-      badge.className = ctx.distanceMinutes > 30 ? "ext-distance ext-distance-far" : "ext-distance";
-      badge.textContent = `🚗 ${formatMinutes(ctx.distanceMinutes)}`;
-    } else {
-      badge.className = "ext-distance";
-      badge.textContent = "—";
-    }
-    locEl.appendChild(badge);
-    nodes.push(badge);
+  // Distance badge — render inside the footer alongside the pills.
+  const badge = document.createElement("span");
+  if (ctx.distanceError) {
+    badge.className = "ext-distance ext-distance-err";
+    badge.textContent = "⚠";
+    badge.title = ctx.distanceError;
+  } else if (ctx.distanceMinutes !== null) {
+    badge.className = ctx.distanceMinutes > 30 ? "ext-distance ext-distance-far" : "ext-distance";
+    badge.textContent = `🚗 ${formatMinutes(ctx.distanceMinutes)}`;
+  } else {
+    badge.className = "ext-distance";
+    badge.textContent = "🚗 —";
   }
+  pillsRow.appendChild(badge);
+
+  // Indeed's `.slider_container` is the element with the rounded blue border
+  // around the listing. It has overflow:hidden + a fixed height, so we have to
+  // (a) render the footer inside it and (b) let it grow — the grow part is
+  // done via a CSS `:has()` rule in injector.css.ts.
+  const footerHost =
+    card.querySelector<HTMLElement>(".slider_container") ??
+    card.closest<HTMLElement>(".slider_container") ??
+    card;
+  footerHost.appendChild(footer);
+  nodes.push(footer);
 
   // Keyword highlights within the snippet
   const snippetEl = card.querySelector<HTMLElement>(SELECTORS.snippetText);
@@ -129,15 +138,6 @@ export function inject(card: HTMLElement, result: MatchResult, ctx: InjectContex
     }
   }
 
-  // Left-border color
-  for (const cls of BORDER_CLASSES) {
-    card.classList.remove(cls);
-  }
-  if (result.leftBorderColor) {
-    card.classList.add(`ext-border-${result.leftBorderColor}`);
-  }
-
-  // Dim
   card.classList.toggle("ext-dim", result.isZeroMatch && ctx.dimZeroMatch);
 
   injected.set(card, nodes);
@@ -151,11 +151,9 @@ export function remove(card: HTMLElement): void {
   }
   // Safety net: clear any stray decorations not tracked by the WeakMap
   // (e.g., after a DOM swap that changed the card's element identity).
-  for (const stray of Array.from(card.querySelectorAll(".ext-pills, .ext-distance"))) {
+  for (const stray of Array.from(card.querySelectorAll(".ext-footer, .ext-pills, .ext-distance"))) {
     stray.remove();
   }
-  for (const cls of ["ext-border-green", "ext-border-blue", "ext-border-purple", "ext-dim"]) {
-    card.classList.remove(cls);
-  }
+  card.classList.remove("ext-dim");
   unwrapHighlights(card);
 }

@@ -108,32 +108,27 @@ describe("match — keyword hits", () => {
   });
 });
 
-describe("match — pill label and left-border color", () => {
+describe("match — pill label", () => {
   const cfg = { ...baseConfig, keywords: ["python"] };
 
-  it("home → purple border, 'Home city match' pill", () => {
+  it("home → 'Home city match' pill", () => {
     const r = match("Python role", "Mississauga, ON", cfg);
-    expect(r.leftBorderColor).toBe("purple");
     expect(r.cityPillLabel).toBe("📍 Home city match");
   });
-  it("home-mentioned → green border, 'Mississauga mentioned' pill", () => {
+  it("home-mentioned → 'Mississauga mentioned' pill", () => {
     const r = match("We also hire from Mississauga", "Toronto, ON", cfg);
-    expect(r.leftBorderColor).toBe("green");
     expect(r.cityPillLabel).toBe("📍 Mississauga mentioned");
   });
-  it("nearby → green border, 'Brampton mentioned' pill", () => {
+  it("nearby → 'Brampton mentioned' pill", () => {
     const r = match("Based in Brampton", "Markham, ON", cfg);
-    expect(r.leftBorderColor).toBe("green");
     expect(r.cityPillLabel).toBe("📍 Brampton mentioned");
   });
-  it("none but keyword hits → green border, no city pill", () => {
+  it("none but keyword hits → no city pill", () => {
     const r = match("Python role", "Markham, ON", cfg);
-    expect(r.leftBorderColor).toBe("green");
     expect(r.cityPillLabel).toBeNull();
   });
-  it("none and zero keywords → null border, no pill, isZeroMatch true", () => {
+  it("none and zero keywords → no pill, isZeroMatch true", () => {
     const r = match("C# role", "Markham, ON", cfg);
-    expect(r.leftBorderColor).toBeNull();
     expect(r.cityPillLabel).toBeNull();
     expect(r.isZeroMatch).toBe(true);
   });
@@ -156,23 +151,7 @@ describe("match — pill label and left-border color", () => {
   });
 });
 
-describe("match — border color with work mode", () => {
-  it("remote work mode → blue border", () => {
-    const r = match("body", "Remote in London", { ...baseConfig, keywords: [] });
-    expect(r.leftBorderColor).toBe("blue");
-  });
-  it("hybrid work mode alone → no border color", () => {
-    const r = match("body", "Hybrid work in Edinburgh", { ...baseConfig, keywords: [] });
-    expect(r.leftBorderColor).toBeNull();
-  });
-  it("home beats hybrid work mode for border color (purple wins)", () => {
-    const r = match("body", "Mississauga, ON", { ...baseConfig, keywords: [] });
-    expect(r.leftBorderColor).toBe("purple");
-  });
-  it("remote beats home for border color (blue wins)", () => {
-    const r = match("body", "Remote in Mississauga, ON", { ...baseConfig, keywords: [] });
-    expect(r.leftBorderColor).toBe("blue");
-  });
+describe("match — zero-match with work mode", () => {
   it("remote card is not zero-match even with no city or keyword hits", () => {
     const r = match("body", "Remote in Somewhere", { ...baseConfig, keywords: [] });
     expect(r.isZeroMatch).toBe(false);
