@@ -209,7 +209,7 @@ export async function fetchJobDescription(jobKey: string): Promise<DescriptionRe
 
   await waitTurn();
 
-  // Re-check the cache after the wait — another concurrent caller may have
+  // Re-check the cache after the wait - another concurrent caller may have
   // filled it while we were queued.
   const afterWait = cache.get(jobKey);
   if (afterWait) return afterWait;

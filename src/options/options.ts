@@ -44,7 +44,7 @@ form.addEventListener("submit", async (e) => {
   const key = apiKey.value.trim();
 
   if (!home) {
-    status.textContent = "Home city is required.";
+    status.textContent = "Your address is required.";
     status.classList.add("error");
     return;
   }

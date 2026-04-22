@@ -12,7 +12,7 @@ const PREFIXES: RegExp[] = [
  * Clean up a location string taken from an Indeed card so the Routes API can
  * geocode it. Strips work-mode prefixes like "Hybrid work in", "Remote in".
  * Returns empty string when the location is purely "Remote" (no associated
- * place) — callers should skip the distance call in that case.
+ * place) - callers should skip the distance call in that case.
  */
 export function sanitizeLocation(raw: string): string {
   const trimmed = raw.trim();

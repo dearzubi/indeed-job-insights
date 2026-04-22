@@ -44,13 +44,13 @@ export function inject(card: HTMLElement, result: MatchResult, ctx: InjectContex
   const pillsRow = document.createElement("div");
   pillsRow.className = "ext-pills";
 
-  // Work-mode pill — always present
+  // Work-mode pill - always present
   const workPill = document.createElement("span");
   workPill.className = `ext-pill ext-pill-${result.workMode}`;
   workPill.textContent = result.workModePillLabel;
   pillsRow.appendChild(workPill);
 
-  // City-match pill — only when there's a match
+  // City-match pill - only when there's a match
   if (result.cityPillLabel) {
     const cityPill = document.createElement("span");
     cityPill.className = "ext-pill ext-pill-city";
@@ -92,7 +92,7 @@ export function inject(card: HTMLElement, result: MatchResult, ctx: InjectContex
 
   footer.appendChild(pillsRow);
 
-  // Distance badge — render inside the footer alongside the pills.
+  // Distance badge - render inside the footer alongside the pills.
   const badge = document.createElement("span");
   if (ctx.distanceError) {
     badge.className = "ext-distance ext-distance-err";
@@ -103,13 +103,13 @@ export function inject(card: HTMLElement, result: MatchResult, ctx: InjectContex
     badge.textContent = `🚗 ${formatMinutes(ctx.distanceMinutes)}`;
   } else {
     badge.className = "ext-distance";
-    badge.textContent = "🚗 —";
+    badge.textContent = "🚗 -";
   }
   pillsRow.appendChild(badge);
 
   // Indeed's `.slider_container` is the element with the rounded blue border
   // around the listing. It has overflow:hidden + a fixed height, so we have to
-  // (a) render the footer inside it and (b) let it grow — the grow part is
+  // (a) render the footer inside it and (b) let it grow - the grow part is
   // done via a CSS `:has()` rule in injector.css.ts.
   const footerHost =
     card.querySelector<HTMLElement>(".slider_container") ??

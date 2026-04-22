@@ -9,7 +9,7 @@ const baseConfig = {
   keywords: [],
 };
 
-describe("match — location classification", () => {
+describe("match - location classification", () => {
   it("returns home when structuredLocation equals homeCity", () => {
     const r = match("Anything", "Mississauga, ON", baseConfig);
     expect(r.cityHit).toBe("home");
@@ -36,7 +36,7 @@ describe("match — location classification", () => {
   });
 });
 
-describe("match — work mode", () => {
+describe("match - work mode", () => {
   const cfg = { ...baseConfig, keywords: [] };
 
   it("onsite when structured location has no prefix", () => {
@@ -72,7 +72,7 @@ describe("match — work mode", () => {
   });
 });
 
-describe("match — keyword hits", () => {
+describe("match - keyword hits", () => {
   const cfg = { ...baseConfig, keywords: ["python", "react", "typescript"] };
 
   it("finds all keywords as whole words", () => {
@@ -108,7 +108,7 @@ describe("match — keyword hits", () => {
   });
 });
 
-describe("match — pill label", () => {
+describe("match - pill label", () => {
   const cfg = { ...baseConfig, keywords: ["python"] };
 
   it("home → 'Home city match' pill", () => {
@@ -151,7 +151,7 @@ describe("match — pill label", () => {
   });
 });
 
-describe("match — zero-match with work mode", () => {
+describe("match - zero-match with work mode", () => {
   it("remote card is not zero-match even with no city or keyword hits", () => {
     const r = match("body", "Remote in Somewhere", { ...baseConfig, keywords: [] });
     expect(r.isZeroMatch).toBe(false);
@@ -189,7 +189,7 @@ describe("match — zero-match with work mode", () => {
   });
 });
 
-describe("match — excluded keywords", () => {
+describe("match - excluded keywords", () => {
   const cfg = { ...baseConfig, keywords: ["python"], excludedKeywords: ["php", "on-site only"] };
 
   it("counts excluded keyword occurrences in fullText", () => {

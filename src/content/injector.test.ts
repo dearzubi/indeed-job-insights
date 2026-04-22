@@ -52,7 +52,7 @@ describe("inject / remove", () => {
     expect(card.querySelectorAll(".ext-kw-hit").length).toBe(2);
   });
 
-  it("is idempotent — re-injecting replaces existing decorations", () => {
+  it("is idempotent - re-injecting replaces existing decorations", () => {
     const card = makeCard();
     const result: MatchResult = {
       cityHit: "none",

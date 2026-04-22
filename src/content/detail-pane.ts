@@ -90,7 +90,7 @@ function removeInsights(host: HTMLElement): void {
 
 async function renderInsights(host: HTMLElement, jobKey: string): Promise<void> {
   const desc = await fetchJobDescription(jobKey);
-  // Another render may have raced past us — bail if the pane has since moved on.
+  // Another render may have raced past us - bail if the pane has since moved on.
   if (getActiveJobKey() !== jobKey) return;
   const parent = host.parentElement;
   if (!parent) return;
