@@ -10,14 +10,13 @@ describe("fetchJobDescription", () => {
     g.fetch = vi.fn();
   });
 
-  it("returns fullText and structuredLocation on success", async () => {
+  it("returns fullText on success", async () => {
     (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
       new Response(
         `<html><body>
           <div class="jobsearch-JobComponent-description">
             Hiring Python devs in Mississauga.
           </div>
-          <div data-testid="inlineHeader-companyLocation">Toronto, ON</div>
         </body></html>`,
         { headers: { "Content-Type": "text/html" } },
       ),
@@ -26,7 +25,6 @@ describe("fetchJobDescription", () => {
     expect(r.ok).toBe(true);
     if (r.ok) {
       expect(r.fullText).toContain("Hiring Python devs in Mississauga.");
-      expect(r.structuredLocation).toBe("Toronto, ON");
     }
   });
 

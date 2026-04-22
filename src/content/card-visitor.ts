@@ -4,7 +4,7 @@ import type { ComputeDistanceResponse } from "../shared/messages.ts";
 import { fetchJobDescription } from "./description-fetch.ts";
 import { inject } from "./injector.ts";
 import { match } from "./matcher.ts";
-import { extractJobKey } from "./selectors.ts";
+import { extractJobKey, SELECTORS } from "./selectors.ts";
 
 const visited = new WeakSet<HTMLElement>();
 
@@ -27,15 +27,19 @@ export function observeCard(card: HTMLElement, config: Config): void {
 async function processCard(card: HTMLElement, config: Config): Promise<void> {
   const jobKey = extractJobKey(card);
   if (!jobKey) return;
+
+  const structuredLocation =
+    card.querySelector<HTMLElement>(SELECTORS.locationText)?.textContent?.trim() ?? "";
+
   const desc = await fetchJobDescription(jobKey);
   if (!desc.ok) return;
 
-  const result = match(desc.fullText, desc.structuredLocation, config);
+  const result = match(desc.fullText, structuredLocation, config);
 
   let distanceMinutes: number | null = null;
   let distanceError: string | null = null;
 
-  const cleanedTo = sanitizeLocation(desc.structuredLocation);
+  const cleanedTo = sanitizeLocation(structuredLocation);
   if (cleanedTo) {
     const response = (await chrome.runtime.sendMessage({
       type: "computeDistance",

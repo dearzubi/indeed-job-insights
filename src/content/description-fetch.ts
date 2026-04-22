@@ -1,6 +1,4 @@
-export type DescriptionResult =
-  | { ok: true; fullText: string; structuredLocation: string }
-  | { ok: false; error: string };
+export type DescriptionResult = { ok: true; fullText: string } | { ok: false; error: string };
 
 const cache = new Map<string, DescriptionResult>();
 
@@ -31,14 +29,9 @@ export async function fetchJobDescription(jobKey: string): Promise<DescriptionRe
   const doc = new DOMParser().parseFromString(html, "text/html");
 
   const descEl = doc.querySelector(".jobsearch-JobComponent-description, #jobDescriptionText");
-  const locEl = doc.querySelector(
-    "[data-testid='inlineHeader-companyLocation'], [data-testid='jobsearch-CompanyInfoContainer'] div",
-  );
-
   const fullText = descEl?.textContent?.trim() ?? "";
-  const structuredLocation = locEl?.textContent?.trim() ?? "";
 
-  const result: DescriptionResult = { ok: true, fullText, structuredLocation };
+  const result: DescriptionResult = { ok: true, fullText };
   cache.set(jobKey, result);
   return result;
 }
