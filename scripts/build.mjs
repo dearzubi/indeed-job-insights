@@ -9,12 +9,12 @@ const root = resolve(__dirname, "..");
 const dist = resolve(root, "dist");
 const isWatch = process.argv.includes("--watch");
 
-const ENTRIES = {
-  content: "src/content/index.ts",
-  background: "src/background/index.ts",
-  options: "src/options/options.ts",
-  popup: "src/popup/popup.ts",
-};
+const ENTRIES = [
+  { name: "content", input: "src/content/index.ts" },
+  { name: "background", input: "src/background/index.ts" },
+  { name: "options", input: "src/options/options.ts" },
+  { name: "popup", input: "src/popup/popup.ts" },
+];
 
 const STATIC_COPIES = [
   ["public/manifest.json", "dist/manifest.json"],
@@ -35,38 +35,46 @@ async function copyStatics() {
   }
 }
 
-const BUNDLE_CONFIG = {
-  input: Object.fromEntries(
-    Object.entries(ENTRIES).map(([name, path]) => [name, resolve(root, path)]),
-  ),
-  platform: "browser",
-  output: {
-    dir: dist,
-    format: "esm",
-    sourcemap: true,
-    entryFileNames: "[name].js",
-    chunkFileNames: "chunks/[name]-[hash].js",
-  },
-};
+function configFor(entry) {
+  return {
+    input: resolve(root, entry.input),
+    platform: "browser",
+    output: {
+      file: resolve(dist, `${entry.name}.js`),
+      format: "esm",
+      sourcemap: true,
+      codeSplitting: false,
+    },
+  };
+}
 
 async function buildOnce() {
   if (existsSync(dist)) await rm(dist, { recursive: true, force: true });
   await mkdir(dist, { recursive: true });
-  await build(BUNDLE_CONFIG);
+  for (const entry of ENTRIES) {
+    await build(configFor(entry));
+  }
   await copyStatics();
   console.log("build complete → dist/");
 }
 
 async function buildWatch() {
-  const watcher = watch(BUNDLE_CONFIG);
-  watcher.on("event", async (event) => {
-    if (event.code === "BUNDLE_END") {
-      await copyStatics();
-      console.log(new Date().toISOString(), "watch rebuild ok");
-    } else if (event.code === "ERROR") {
-      console.error("watch rebuild error:", event.error);
-    }
-  });
+  const watchers = ENTRIES.map((entry) => watch(configFor(entry)));
+  let pending = watchers.length;
+  for (const watcher of watchers) {
+    watcher.on("event", async (event) => {
+      if (event.code === "BUNDLE_END") {
+        pending = Math.max(0, pending - 1);
+        if (pending === 0) {
+          await copyStatics();
+          console.log(new Date().toISOString(), "watch rebuild ok");
+          pending = watchers.length;
+        }
+      } else if (event.code === "ERROR") {
+        console.error("watch rebuild error:", event.error);
+      }
+    });
+  }
   console.log("watching...");
 }
 
