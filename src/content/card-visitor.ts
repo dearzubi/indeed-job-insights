@@ -32,9 +32,14 @@ async function processCard(card: HTMLElement, config: Config): Promise<void> {
     card.querySelector<HTMLElement>(SELECTORS.locationText)?.textContent?.trim() ?? "";
 
   const desc = await fetchJobDescription(jobKey);
-  if (!desc.ok) return;
+  // Fall back to the card's visible snippet when the viewjob fetch fails
+  // (typically Cloudflare 403 after a burst). Better to decorate with a
+  // partial signal than to leave the card blank.
+  const fullText = desc.ok
+    ? desc.fullText
+    : (card.querySelector<HTMLElement>(SELECTORS.snippetText)?.textContent?.trim() ?? "");
 
-  const result = match(desc.fullText, structuredLocation, config);
+  const result = match(fullText, structuredLocation, config);
 
   let distanceMinutes: number | null = null;
   let distanceError: string | null = null;
