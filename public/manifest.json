@@ -1,15 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "Indeed Helper",
+  "name": "Indeed Job Insights",
   "version": "0.1.0",
-  "description": "Smarter Indeed search: city-mention detection, driving time, and keyword highlighting.",
+  "description": "Surfaces driving time, keyword hits, must-have skills, and employer insights on Indeed job listings.",
   "icons": {
     "16": "icons/16.png",
     "48": "icons/48.png",
     "128": "icons/128.png"
   },
   "action": {
-    "default_title": "Indeed Helper",
+    "default_title": "Indeed Job Insights",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icons/16.png",

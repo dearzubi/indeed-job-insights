@@ -5,7 +5,7 @@ import { SELECTORS } from "./selectors.ts";
 export function startScanning(config: Config): () => void {
   const container = document.querySelector<HTMLElement>(SELECTORS.resultsContainer);
   if (!container) {
-    console.warn("[indeed-helper] results container not found");
+    console.warn("[indeed-job-insights] results container not found");
     return () => {};
   }
 

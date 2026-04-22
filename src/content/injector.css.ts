@@ -30,9 +30,9 @@ export const INJECTOR_CSS = `
 `;
 
 export function ensureStylesInjected(): void {
-  if (document.getElementById("indeed-helper-styles")) return;
+  if (document.getElementById("indeed-job-insights-styles")) return;
   const style = document.createElement("style");
-  style.id = "indeed-helper-styles";
+  style.id = "indeed-job-insights-styles";
   style.textContent = INJECTOR_CSS;
   document.head.appendChild(style);
 }

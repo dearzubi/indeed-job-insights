@@ -38,7 +38,3 @@ export async function saveConfig(partial: Partial<Config>): Promise<void> {
   const next: Config = { ...current, ...partial };
   await chrome.storage.local.set({ [STORAGE_KEY]: next });
 }
-
-export function isConfigComplete(config: Config): boolean {
-  return config.homeCity.trim().length > 0 && config.googleMapsApiKey.trim().length > 0;
-}

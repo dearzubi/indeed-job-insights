@@ -73,7 +73,13 @@ async function processCard(card: HTMLElement, config: Config): Promise<void> {
   let distanceMinutes: number | null = null;
   let distanceError: string | null = null;
 
-  const destination = pickDestination(desc.ok ? desc.location : null, structuredLocation);
+  // Driving time is an optional feature: skip the Google Maps call entirely
+  // when the user hasn't provided an address or API key. The card still gets
+  // all other decorations (pills, keyword highlights, dim logic).
+  const canComputeDistance = config.homeCity.trim() !== "" && config.googleMapsApiKey.trim() !== "";
+  const destination = canComputeDistance
+    ? pickDestination(desc.ok ? desc.location : null, structuredLocation)
+    : null;
   if (destination) {
     const response = (await chrome.runtime.sendMessage({
       type: "computeDistance",

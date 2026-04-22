@@ -92,20 +92,21 @@ export function inject(card: HTMLElement, result: MatchResult, ctx: InjectContex
 
   footer.appendChild(pillsRow);
 
-  // Distance badge - render inside the footer alongside the pills.
-  const badge = document.createElement("span");
-  if (ctx.distanceError) {
-    badge.className = "ext-distance ext-distance-err";
-    badge.textContent = "⚠";
-    badge.title = ctx.distanceError;
-  } else if (ctx.distanceMinutes !== null) {
-    badge.className = ctx.distanceMinutes > 30 ? "ext-distance ext-distance-far" : "ext-distance";
-    badge.textContent = `🚗 ${formatMinutes(ctx.distanceMinutes)}`;
-  } else {
-    badge.className = "ext-distance";
-    badge.textContent = "🚗 -";
+  // Distance badge: only render when we have data or an error to report. When
+  // the user hasn't configured an address + API key (or the extension simply
+  // couldn't pick a destination), omit the badge entirely.
+  if (ctx.distanceError || ctx.distanceMinutes !== null) {
+    const badge = document.createElement("span");
+    if (ctx.distanceError) {
+      badge.className = "ext-distance ext-distance-err";
+      badge.textContent = "⚠";
+      badge.title = ctx.distanceError;
+    } else if (ctx.distanceMinutes !== null) {
+      badge.className = ctx.distanceMinutes > 30 ? "ext-distance ext-distance-far" : "ext-distance";
+      badge.textContent = `🚗 ${formatMinutes(ctx.distanceMinutes)}`;
+    }
+    pillsRow.appendChild(badge);
   }
-  pillsRow.appendChild(badge);
 
   // Indeed's `.slider_container` is the element with the rounded blue border
   // around the listing. It has overflow:hidden + a fixed height, so we have to

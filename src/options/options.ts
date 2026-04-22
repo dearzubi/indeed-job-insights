@@ -59,18 +59,6 @@ form.addEventListener("submit", async (e) => {
   const home = homeCity.value.trim();
   const key = apiKey.value.trim();
 
-  if (!home) {
-    status.textContent = "Your address is required.";
-    status.classList.add("error");
-    return;
-  }
-  if (!/^AIza[0-9A-Za-z_-]{35}$/.test(key)) {
-    status.textContent =
-      "API key doesn't look like a Google Maps key (must start with AIza, 39 chars).";
-    status.classList.add("error");
-    return;
-  }
-
   await saveConfig({
     ...DEFAULT_CONFIG,
     homeCity: home,

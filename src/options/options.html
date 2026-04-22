@@ -2,43 +2,51 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Indeed Helper - Options</title>
+    <title>Indeed Job Insights - Options</title>
     <link rel="stylesheet" href="options.css" />
   </head>
   <body>
     <main>
-      <h1>Indeed Helper</h1>
-      <p class="subtitle">Configure your address, nearby cities, keywords, and Google Maps key.</p>
+      <h1>Indeed Job Insights</h1>
+      <p class="subtitle">All fields are optional. Provide an address and API key for driving times; keywords power the highlighting and match badges.</p>
       <form id="form">
-        <label>
-          Your address
-          <input type="text" id="homeCity" placeholder="Full address, or just a city (e.g. '1 High St, Woking, UK' or 'Woking')" required />
-        </label>
-        <label>
-          Nearby cities (one per line)
-          <textarea id="nearbyCities" rows="4" placeholder="Toronto&#10;Brampton&#10;Oakville"></textarea>
-        </label>
-        <label>
-          Keywords (one per line; whole-word, case-insensitive)
-          <textarea id="keywords" rows="6" placeholder="python&#10;react&#10;typescript"></textarea>
-        </label>
-        <label>
-          Excluded keywords (one per line; counted but not highlighted)
-          <textarea id="excludedKeywords" rows="4" placeholder="php&#10;.net&#10;on-site only"></textarea>
-        </label>
-        <label>
-          Google Maps API key
-          <input type="password" id="googleMapsApiKey" placeholder="AIza..." required />
-          <span class="hint">Stored locally. <a href="https://developers.google.com/maps/documentation/distance-matrix/get-api-key" target="_blank" rel="noopener">How to get one</a>.</span>
-        </label>
-        <label class="checkbox">
-          <input type="checkbox" id="dimZeroMatch" />
-          Dim zero-match cards by default
-        </label>
-        <label class="checkbox">
-          <input type="checkbox" id="dimNegativeMatch" />
-          Dim cards where excluded hits outnumber keyword hits
-        </label>
+        <fieldset>
+          <legend>Location &amp; driving time</legend>
+          <label>
+            Google Maps API key
+            <input type="password" id="googleMapsApiKey" placeholder="AIza..." />
+            <span class="hint">Stored locally. Leave blank to disable driving-time badges.</span>
+          </label>
+          <label>
+            Your address
+            <input type="text" id="homeCity" placeholder="Full address, or just a city (e.g. '1 High St, Woking, UK' or 'Woking')" />
+          </label>
+          <label>
+            Nearby cities (one per line)
+            <textarea id="nearbyCities" rows="4" placeholder="Toronto&#10;Brampton&#10;Oakville"></textarea>
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Keywords &amp; dimming</legend>
+          <label>
+            Keywords (one per line; whole-word, case-insensitive)
+            <textarea id="keywords" rows="6" placeholder="python&#10;react&#10;typescript"></textarea>
+          </label>
+          <label>
+            Excluded keywords (one per line; counted but not highlighted)
+            <textarea id="excludedKeywords" rows="4" placeholder="php&#10;.net&#10;on-site only"></textarea>
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" id="dimZeroMatch" />
+            Dim zero-match cards by default
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" id="dimNegativeMatch" />
+            Dim cards where excluded hits outnumber keyword hits
+          </label>
+        </fieldset>
+
         <div class="actions">
           <button type="submit">Save</button>
           <span id="status" class="status"></span>

@@ -4,6 +4,8 @@ main { max-width: 640px; margin: 40px auto; padding: 32px; background: #fff; bor
 h1 { margin: 0 0 4px 0; font-size: 22px; }
 .subtitle { color: #666; margin: 0 0 24px 0; font-size: 14px; }
 form { display: flex; flex-direction: column; gap: 18px; }
+fieldset { display: flex; flex-direction: column; gap: 16px; border: 1px solid #e5e5e5; border-radius: 6px; padding: 16px 18px 18px; margin: 0; }
+legend { font-size: 13px; font-weight: 700; color: #111; padding: 0 6px; letter-spacing: 0.2px; }
 label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: #222; }
 label.checkbox { flex-direction: row; align-items: center; gap: 8px; font-weight: 500; }
 input[type="text"], input[type="password"], textarea {
