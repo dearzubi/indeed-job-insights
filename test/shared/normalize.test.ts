@@ -86,4 +86,24 @@ describe("buildWholeWordRegex", () => {
     const re = buildWholeWordRegex(["c++"]);
     expect("I code in C++ sometimes".match(re)?.[0]).toBe("C++");
   });
+  it("empty-keyword sentinel is a global regex safe for matchAll", () => {
+    const re = buildWholeWordRegex([]);
+    // matchAll throws TypeError on non-global regexes; this must not throw.
+    expect([..."whatever".matchAll(re)]).toEqual([]);
+  });
+
+  it("prefers the longest keyword when shorter keyword is a prefix (['c', 'c++'])", () => {
+    const re = buildWholeWordRegex(["c", "c++"]);
+    expect("I code in C++ daily".match(re)?.[0]).toBe("C++");
+  });
+
+  it("prefers the longest keyword regardless of input order (['c++', 'c'])", () => {
+    const re = buildWholeWordRegex(["c++", "c"]);
+    expect("I code in C++ daily".match(re)?.[0]).toBe("C++");
+  });
+
+  it("prefers 'react native' over 'react' when both are configured", () => {
+    const re = buildWholeWordRegex(["react", "react native"]);
+    expect("Role needs React Native experience".match(re)?.[0]).toBe("React Native");
+  });
 });

@@ -27,7 +27,7 @@ function hasWordBoundary(kw: string): boolean {
   return /^[\p{L}\p{N}_]/u.test(kw) && /[\p{L}\p{N}_]$/u.test(kw);
 }
 
-const NEVER_MATCHES = /$.^/;
+const NEVER_MATCHES = /(?!)/giu;
 
 export function buildWholeWordRegex(keywords: string[]): RegExp {
   if (keywords.length === 0) return NEVER_MATCHES;
@@ -36,11 +36,14 @@ export function buildWholeWordRegex(keywords: string[]): RegExp {
       const kw = raw.trim();
       if (!kw) return null;
       const escaped = escapeRegex(kw);
-      return hasWordBoundary(kw)
+      const compiled = hasWordBoundary(kw)
         ? `\\b${escaped}\\b`
         : `(?<![\\p{L}\\p{N}_])${escaped}(?![\\p{L}\\p{N}_])`;
+      return { rawLen: kw.length, compiled };
     })
-    .filter((p): p is string => p !== null);
+    .filter((p): p is { rawLen: number; compiled: string } => p !== null)
+    .sort((a, b) => b.rawLen - a.rawLen)
+    .map((p) => p.compiled);
   if (parts.length === 0) return NEVER_MATCHES;
   return new RegExp(parts.join("|"), "giu");
 }
