@@ -11,21 +11,24 @@ describe("fetchDrivingDistance", () => {
   it("returns minutes and meters on OK response", async () => {
     (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
       new Response(
-        JSON.stringify({
-          status: "OK",
-          rows: [
-            { elements: [{ status: "OK", duration: { value: 1800 }, distance: { value: 30000 } }] },
-          ],
-        }),
+        JSON.stringify([
+          {
+            originIndex: 0,
+            destinationIndex: 0,
+            duration: "1800s",
+            distanceMeters: 30000,
+            status: {},
+          },
+        ]),
       ),
     );
     const r = await fetchDrivingDistance({ from: "Mississauga", to: "Toronto", apiKey: "k" });
     expect(r).toEqual({ ok: true, minutes: 30, meters: 30000, cached: false });
   });
 
-  it("returns invalid-key on REQUEST_DENIED", async () => {
+  it("returns invalid-key on HTTP 403", async () => {
     (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
-      new Response(JSON.stringify({ status: "REQUEST_DENIED", error_message: "bad key" })),
+      new Response(JSON.stringify({ error: { message: "bad key" } }), { status: 403 }),
     );
     const r = await fetchDrivingDistance({ from: "a", to: "b", apiKey: "k" });
     expect(r).toEqual({
@@ -35,19 +38,25 @@ describe("fetchDrivingDistance", () => {
     });
   });
 
-  it("returns quota-exceeded on OVER_QUERY_LIMIT", async () => {
+  it("returns rate-limited on HTTP 429", async () => {
     (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
-      new Response(JSON.stringify({ status: "OVER_QUERY_LIMIT" })),
+      new Response(JSON.stringify({ error: { message: "too many" } }), { status: 429 }),
     );
     const r = await fetchDrivingDistance({ from: "a", to: "b", apiKey: "k" });
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errorKind).toBe("quota-exceeded");
+    if (!r.ok) expect(r.errorKind).toBe("rate-limited");
   });
 
   it("returns no-route on per-element NOT_FOUND", async () => {
     (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
       new Response(
-        JSON.stringify({ status: "OK", rows: [{ elements: [{ status: "NOT_FOUND" }] }] }),
+        JSON.stringify([
+          {
+            originIndex: 0,
+            destinationIndex: 0,
+            status: { code: 5, message: "NOT_FOUND" },
+          },
+        ]),
       ),
     );
     const r = await fetchDrivingDistance({ from: "a", to: "b", apiKey: "k" });

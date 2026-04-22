@@ -28,6 +28,6 @@
       "run_at": "document_idle"
     }
   ],
-  "host_permissions": ["https://*.indeed.com/*", "https://maps.googleapis.com/*"],
+  "host_permissions": ["https://*.indeed.com/*", "https://routes.googleapis.com/*"],
   "permissions": ["storage"]
 }

@@ -6,60 +6,97 @@ interface Params {
   apiKey: string;
 }
 
-const BASE_URL = "https://maps.googleapis.com/maps/api/distancematrix/json";
+const ENDPOINT = "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix";
+const FIELD_MASK = "originIndex,destinationIndex,duration,distanceMeters,status";
+
+interface RouteMatrixElement {
+  originIndex?: number;
+  destinationIndex?: number;
+  duration?: string;
+  distanceMeters?: number;
+  status?: { code?: number; message?: string };
+}
+
+function parseDurationSeconds(value: string | undefined): number | null {
+  if (!value) return null;
+  const match = /^(\d+)s$/.exec(value);
+  if (!match?.[1]) return null;
+  const n = Number.parseInt(match[1], 10);
+  return Number.isFinite(n) ? n : null;
+}
 
 export async function fetchDrivingDistance(params: Params): Promise<ComputeDistanceResponse> {
-  const url = new URL(BASE_URL);
-  url.searchParams.set("origins", params.from);
-  url.searchParams.set("destinations", params.to);
-  url.searchParams.set("mode", "driving");
-  url.searchParams.set("key", params.apiKey);
+  const body = JSON.stringify({
+    origins: [{ waypoint: { address: params.from } }],
+    destinations: [{ waypoint: { address: params.to } }],
+    travelMode: "DRIVE",
+  });
 
   let response: Response;
   try {
-    response = await fetch(url.toString());
+    response = await fetch(ENDPOINT, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": params.apiKey,
+        "X-Goog-FieldMask": FIELD_MASK,
+      },
+      body,
+    });
   } catch (e) {
     return { ok: false, errorKind: "network", message: String(e) };
   }
 
-  let body: unknown;
+  if (!response.ok) {
+    let errMessage = `http ${response.status}`;
+    try {
+      const errBody = (await response.json()) as { error?: { message?: string } };
+      if (errBody?.error?.message) errMessage = errBody.error.message;
+    } catch {
+      // ignore parse failure on error body
+    }
+
+    if (response.status === 401 || response.status === 403) {
+      return { ok: false, errorKind: "invalid-key", message: errMessage };
+    }
+    if (response.status === 429) {
+      return { ok: false, errorKind: "rate-limited", message: errMessage };
+    }
+    return { ok: false, errorKind: "unknown", message: errMessage };
+  }
+
+  let parsed: unknown;
   try {
-    body = await response.json();
+    parsed = await response.json();
   } catch (e) {
     return { ok: false, errorKind: "network", message: `parse: ${String(e)}` };
   }
 
-  const top = body as {
-    status?: string;
-    error_message?: string;
-    rows?: Array<{
-      elements?: Array<{
-        status?: string;
-        duration?: { value: number };
-        distance?: { value: number };
-      }>;
-    }>;
-  };
-
-  if (top.status === "REQUEST_DENIED") {
-    return { ok: false, errorKind: "invalid-key", message: top.error_message ?? "request denied" };
-  }
-  if (top.status === "OVER_QUERY_LIMIT") {
-    return { ok: false, errorKind: "quota-exceeded", message: "over quota" };
-  }
-  if (top.status !== "OK") {
-    return { ok: false, errorKind: "unknown", message: top.status ?? "no status" };
+  const arr = parsed as RouteMatrixElement[] | undefined;
+  const element = Array.isArray(arr) ? arr[0] : undefined;
+  if (!element) {
+    return { ok: false, errorKind: "unknown", message: "empty response" };
   }
 
-  const element = top.rows?.[0]?.elements?.[0];
-  if (!element || element.status !== "OK" || !element.duration || !element.distance) {
-    return { ok: false, errorKind: "no-route", message: element?.status ?? "no element" };
+  const code = element.status?.code ?? 0;
+  if (code !== 0) {
+    return {
+      ok: false,
+      errorKind: "no-route",
+      message: element.status?.message ?? `status code ${code}`,
+    };
+  }
+
+  const seconds = parseDurationSeconds(element.duration);
+  const meters = element.distanceMeters;
+  if (seconds === null || typeof meters !== "number") {
+    return { ok: false, errorKind: "no-route", message: "missing duration or distance" };
   }
 
   return {
     ok: true,
-    minutes: Math.round(element.duration.value / 60),
-    meters: element.distance.value,
+    minutes: Math.round(seconds / 60),
+    meters,
     cached: false,
   };
 }

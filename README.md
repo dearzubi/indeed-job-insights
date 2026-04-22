@@ -8,7 +8,7 @@ Chrome extension that improves Indeed job search:
 ## Requirements
 
 - Node 22+, pnpm 10+.
-- Personal Google Maps Distance Matrix API key with billing enabled (free $200/mo credit covers personal use).
+- Personal Google Maps API key with the Routes API enabled. Usage falls under the "Compute Route Matrix Essentials" SKU — 10,000 free calls/month, then $5 per 1,000. Personal job search easily stays in the free tier with caching.
 
 ## Setup
 
@@ -39,8 +39,8 @@ After any change to `src/content/selectors.ts`, `description-fetch.ts`, or the i
 1. `pnpm build`, reload the extension in `chrome://extensions`.
 2. Open `https://ca.indeed.com/jobs?q=python&l=Toronto`.
 3. Scroll slowly; verify card decorations (pills, border, distance, highlights) render correctly.
-4. DevTools Network tab: confirm ≤1 `/viewjob` req/sec and ≤1 `distancematrix/json` req/sec.
-5. Reload the page: confirm cached cities don't re-hit Distance Matrix.
+4. DevTools Network tab: confirm ≤1 `/viewjob` req/sec and ≤1 `computeRouteMatrix` req/sec.
+5. Reload the page: confirm cached cities don't re-hit the Routes API.
 6. Flip "Dim zero-match cards" in the popup: instant re-style, zero network.
 7. Enter a bad API key in options: distance badges show `⚠`; pills and highlights still work.
 8. Add a punctuated keyword (e.g. `.NET`): verify it matches in descriptions containing `.NET`.
