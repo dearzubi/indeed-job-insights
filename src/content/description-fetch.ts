@@ -19,7 +19,6 @@ export type DescriptionResult =
       fullText: string;
       postedAge: string | null;
       postedToday: boolean;
-      numOfCandidates: string | null;
       location: JobLocation | null;
       organicApplyStarts: number | null;
       mustHaveSkills: string[];
@@ -83,7 +82,6 @@ function extractJsonArray(html: string, afterIdx: number, maxLen = 200_000): str
 interface HiringInsights {
   age: string | null;
   postedToday: boolean;
-  numOfCandidates: string | null;
   employerResponsive: EmployerResponsive | null;
 }
 
@@ -111,7 +109,6 @@ function parseHiringInsights(html: string): HiringInsights {
   const empty: HiringInsights = {
     age: null,
     postedToday: false,
-    numOfCandidates: null,
     employerResponsive: null,
   };
   const keyIdx = html.indexOf('"hiringInsightsModel":');
@@ -122,13 +119,11 @@ function parseHiringInsights(html: string): HiringInsights {
     const parsed = JSON.parse(json) as {
       age?: unknown;
       postedToday?: unknown;
-      numOfCandidates?: unknown;
       employerResponsiveCardModel?: unknown;
     };
     return {
       age: typeof parsed.age === "string" ? parsed.age : null,
       postedToday: parsed.postedToday === true,
-      numOfCandidates: typeof parsed.numOfCandidates === "string" ? parsed.numOfCandidates : null,
       employerResponsive: parseEmployerResponsive(parsed.employerResponsiveCardModel),
     };
   } catch {
@@ -249,7 +244,6 @@ export async function fetchJobDescription(jobKey: string): Promise<DescriptionRe
     fullText,
     postedAge: insights.age,
     postedToday: insights.postedToday,
-    numOfCandidates: insights.numOfCandidates,
     location: jobLocation,
     organicApplyStarts,
     mustHaveSkills,

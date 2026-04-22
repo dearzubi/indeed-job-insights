@@ -27,7 +27,6 @@ describe("fetchJobDescription", () => {
       expect(r.fullText).toContain("Hiring Python devs in Mississauga.");
       expect(r.postedAge).toBeNull();
       expect(r.postedToday).toBe(false);
-      expect(r.numOfCandidates).toBeNull();
     }
   });
 
@@ -63,7 +62,6 @@ describe("fetchJobDescription", () => {
     if (r.ok) {
       expect(r.postedAge).toBe("8 days ago");
       expect(r.postedToday).toBe(false);
-      expect(r.numOfCandidates).toBe("50+");
     }
   });
 
@@ -79,7 +77,6 @@ describe("fetchJobDescription", () => {
     if (r.ok) {
       expect(r.postedAge).toBeNull();
       expect(r.postedToday).toBe(false);
-      expect(r.numOfCandidates).toBeNull();
     }
   });
 
@@ -265,7 +262,6 @@ describe("fetchJobDescription", () => {
     expect(r.ok).toBe(true);
     if (r.ok) {
       expect(r.postedToday).toBe(true);
-      expect(r.numOfCandidates).toBeNull();
     }
   });
 });

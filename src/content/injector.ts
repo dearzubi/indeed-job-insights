@@ -10,7 +10,6 @@ export interface InjectContext {
   excludedKeywords: string[];
   postedAge: string | null;
   postedToday: boolean;
-  numOfCandidates: string | null;
   organicApplyStarts: number | null;
 }
 
@@ -18,14 +17,6 @@ function formatPostedLabel(ctx: InjectContext): string | null {
   if (ctx.postedToday) return "🕒 Posted today";
   if (ctx.postedAge?.trim()) return `🕒 ${ctx.postedAge.trim()}`;
   return null;
-}
-
-function formatApplicantsLabel(ctx: InjectContext): string | null {
-  const raw = ctx.numOfCandidates?.trim();
-  if (!raw) return null;
-  // Grammar: "1 applicant" vs "N applicants". For "50+", "10+" style, always plural.
-  const plural = /\+/.test(raw) || raw !== "1";
-  return `👥 ${raw} applicant${plural ? "s" : ""}`;
 }
 
 const injected = new WeakMap<HTMLElement, HTMLElement[]>();
@@ -88,14 +79,6 @@ export function inject(card: HTMLElement, result: MatchResult, ctx: InjectContex
     const p = document.createElement("span");
     p.className = "ext-pill ext-pill-posted";
     p.textContent = postedLabel;
-    pillsRow.appendChild(p);
-  }
-
-  const applicantsLabel = formatApplicantsLabel(ctx);
-  if (applicantsLabel) {
-    const p = document.createElement("span");
-    p.className = "ext-pill ext-pill-applicants";
-    p.textContent = applicantsLabel;
     pillsRow.appendChild(p);
   }
 

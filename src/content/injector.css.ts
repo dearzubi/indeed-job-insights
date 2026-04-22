@@ -12,7 +12,6 @@ export const INJECTOR_CSS = `
 .ext-pill-keywords { background: #bbf7d0; color: #166534; border-color: #4ade80; }
 .ext-pill-excluded { background: #fecaca; color: #991b1b; border-color: #f87171; }
 .ext-pill-posted { background: #c7d2fe; color: #3730a3; border-color: #818cf8; }
-.ext-pill-applicants { background: #fde68a; color: #92400e; border-color: #fbbf24; }
 .ext-pill-interested { background: #fecdd3; color: #9f1239; border-color: #fb7185; }
 .ext-distance { display: inline-flex; align-items: center; gap: 4px; background: #bae6fd; color: #075985; font-size: 13px; font-weight: 600; padding: 3px 10px; border-radius: 12px; border: 1px solid #38bdf8; position: relative; z-index: 2; }
 .ext-distance-far { background: #fed7aa; color: #9a4c00; border-color: #fb923c; }
