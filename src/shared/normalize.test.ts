@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeCityName } from "../../src/shared/normalize.ts";
+import { normalizeCityName } from "./normalize.ts";
 
 describe("normalizeCityName", () => {
   it("lowercases", () => {
@@ -43,7 +43,7 @@ describe("normalizeCityName", () => {
   });
 });
 
-import { buildWholeWordRegex, normalizeKeyword } from "../../src/shared/normalize.ts";
+import { buildWholeWordRegex, normalizeKeyword } from "./normalize.ts";
 
 describe("normalizeKeyword", () => {
   it("lowercases and trims", () => {

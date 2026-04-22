@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { clearDescriptionCache, fetchJobDescription } from "../../src/content/description-fetch.ts";
+import { clearDescriptionCache, fetchJobDescription } from "./description-fetch.ts";
 
 const g = globalThis as typeof globalThis & { fetch: typeof fetch };
 

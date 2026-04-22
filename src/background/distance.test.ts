@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchDrivingDistance } from "../../src/background/distance.ts";
+import { fetchDrivingDistance } from "./distance.ts";
 
 const g = globalThis as typeof globalThis & { fetch: typeof fetch };
 

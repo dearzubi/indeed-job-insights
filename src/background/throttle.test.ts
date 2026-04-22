@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Throttle } from "../../src/background/throttle.ts";
+import { Throttle } from "./throttle.ts";
 
 describe("Throttle", () => {
   beforeEach(() => {

@@ -2,8 +2,8 @@
  * @vitest-environment happy-dom
  */
 import { beforeEach, describe, expect, it } from "vitest";
-import { inject, remove } from "../../src/content/injector.ts";
-import type { MatchResult } from "../../src/content/matcher.ts";
+import { inject, remove } from "./injector.ts";
+import type { MatchResult } from "./matcher.ts";
 
 function makeCard(): HTMLElement {
   const card = document.createElement("li");

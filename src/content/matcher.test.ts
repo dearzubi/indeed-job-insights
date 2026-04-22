@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { match } from "../../src/content/matcher.ts";
-import { DEFAULT_CONFIG } from "../../src/shared/config.ts";
+import { DEFAULT_CONFIG } from "../shared/config.ts";
+import { match } from "./matcher.ts";
 
 const baseConfig = {
   ...DEFAULT_CONFIG,

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { DistanceCache, type DistanceCacheEntry } from "../../src/background/cache.ts";
+import { DistanceCache, type DistanceCacheEntry } from "./cache.ts";
 
 function makeMockStorage() {
   const backing: Record<string, unknown> = {};
