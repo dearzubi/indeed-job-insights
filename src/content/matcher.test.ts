@@ -181,4 +181,31 @@ describe("match — border color with work mode", () => {
     const r = match("body", "Hybrid work in Somewhere", { ...baseConfig, keywords: [] });
     expect(r.isZeroMatch).toBe(true);
   });
+  it("with keywords configured: zero keyword hits is zero-match even when home-mentioned", () => {
+    const r = match(
+      "Delivery driver role. Routes around Mississauga city centre.",
+      "Oakville, ON",
+      { ...baseConfig, keywords: ["python", "react"] },
+    );
+    expect(r.cityHit).toBe("home-mentioned");
+    expect(r.keywordHits).toEqual([]);
+    expect(r.isZeroMatch).toBe(true);
+  });
+  it("with keywords configured: at least one keyword hit means NOT zero-match", () => {
+    const r = match("Junior Python developer at a startup", "Leeds", {
+      ...baseConfig,
+      keywords: ["python"],
+    });
+    expect(r.keywordHits.length).toBeGreaterThan(0);
+    expect(r.isZeroMatch).toBe(false);
+  });
+  it("with keywords configured: remote posting with zero hits is still zero-match", () => {
+    const r = match("Customer support remote role", "Remote in London", {
+      ...baseConfig,
+      keywords: ["python", "react"],
+    });
+    expect(r.workMode).toBe("remote");
+    expect(r.keywordHits).toEqual([]);
+    expect(r.isZeroMatch).toBe(true);
+  });
 });

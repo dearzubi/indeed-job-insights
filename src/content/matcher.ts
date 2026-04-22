@@ -69,7 +69,14 @@ export function match(fullText: string, structuredLocation: string, config: Conf
   const cityPillLabel = makeCityPillLabel(cityHit, fullText, config);
   const workModePillLabel = makeWorkModePillLabel(workMode);
   const leftBorderColor = makeBorderColor(cityHit, workMode, keywordHits.length);
-  const isZeroMatch = cityHit === "none" && keywordHits.length === 0 && workMode !== "remote";
+  // When the user has configured keywords, they are the primary relevance signal:
+  // any card with zero keyword hits is zero-match regardless of city/workMode. When
+  // no keywords are configured, fall back to location-based dimming so "survey a city"
+  // mode still shows most cards.
+  const isZeroMatch =
+    config.keywords.length > 0
+      ? keywordHits.length === 0
+      : cityHit === "none" && workMode !== "remote";
 
   return {
     cityHit,
