@@ -48,8 +48,9 @@ export function clearDescriptionCache(): void {
 }
 
 // Balanced-bracket scan starting at the first `open` bracket after `afterIdx`,
-// capped to prevent runaway on malformed HTML. Returns the matched substring or
-// null.
+// capped to prevent runaway on malformed HTML. Tracks JSON string state so
+// brackets inside `"..."` string literals don't corrupt the depth counter.
+// Returns the matched substring or null.
 function extractBalanced(
   html: string,
   afterIdx: number,
@@ -60,8 +61,20 @@ function extractBalanced(
   const start = html.indexOf(open, afterIdx);
   if (start < 0) return null;
   let depth = 0;
+  let inString = false;
+  let escaped = false;
   for (let i = start; i < html.length && i < start + maxLen; i++) {
     const c = html[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (c === "\\") escaped = true;
+      else if (c === '"') inString = false;
+      continue;
+    }
+    if (c === '"') {
+      inString = true;
+      continue;
+    }
     if (c === open) depth++;
     else if (c === close) {
       depth--;
@@ -167,35 +180,40 @@ function parseMustHaveSkills(html: string): string[] {
   }
 }
 
+function parseJobLocationJson(json: string): JobLocation {
+  const parsed = JSON.parse(json) as {
+    postalCode?: unknown;
+    latitude?: unknown;
+    longitude?: unknown;
+    fullAddress?: unknown;
+    countryCode?: unknown;
+  };
+  return {
+    postalCode: typeof parsed.postalCode === "string" ? parsed.postalCode : null,
+    latitude: typeof parsed.latitude === "number" ? parsed.latitude : null,
+    longitude: typeof parsed.longitude === "number" ? parsed.longitude : null,
+    fullAddress: typeof parsed.fullAddress === "string" ? parsed.fullAddress : null,
+    countryCode: typeof parsed.countryCode === "string" ? parsed.countryCode : null,
+  };
+}
+
 // The /viewjob payload embeds the job's structured location as a JSON blob
 // keyed `"location":{ ... "__typename":"JobLocation" ... }`. There can be other
 // unrelated `"location":{` keys in the HTML, so we scan forward until we hit one
-// whose object references `JobLocation`.
+// whose object references `JobLocation` AND parses cleanly. A failure on an
+// earlier key (e.g. hits the maxLen cap inside a minified script) must not
+// prevent us from finding a real later block.
 function parseJobLocation(html: string): JobLocation | null {
   let cursor = 0;
   while (cursor < html.length) {
     const idx = html.indexOf('"location":{', cursor);
     if (idx < 0) return null;
     const json = extractJsonObject(html, idx);
-    if (!json) return null;
-    if (json.includes("JobLocation")) {
+    if (json?.includes("JobLocation")) {
       try {
-        const parsed = JSON.parse(json) as {
-          postalCode?: unknown;
-          latitude?: unknown;
-          longitude?: unknown;
-          fullAddress?: unknown;
-          countryCode?: unknown;
-        };
-        return {
-          postalCode: typeof parsed.postalCode === "string" ? parsed.postalCode : null,
-          latitude: typeof parsed.latitude === "number" ? parsed.latitude : null,
-          longitude: typeof parsed.longitude === "number" ? parsed.longitude : null,
-          fullAddress: typeof parsed.fullAddress === "string" ? parsed.fullAddress : null,
-          countryCode: typeof parsed.countryCode === "string" ? parsed.countryCode : null,
-        };
+        return parseJobLocationJson(json);
       } catch {
-        return null;
+        // fall through and keep scanning
       }
     }
     cursor = idx + 12;

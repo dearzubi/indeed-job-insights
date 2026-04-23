@@ -279,6 +279,52 @@ describe("fetchJobDescription", () => {
     }
   });
 
+  it("extractBalanced ignores braces inside JSON string literals", async () => {
+    // The JobLocation's fullAddress contains an unbalanced `}` inside the string.
+    // Without string-awareness, the bracket scan treats that `}` as closing the
+    // inner object, producing an invalid JSON slice that fails to parse.
+    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+      new Response(
+        `<html><body>
+          <div class="jobsearch-JobComponent-description">body</div>
+          <script>var x = {"location":{"__typename":"JobLocation","countryCode":"US","postalCode":"10001","latitude":40.75,"longitude":-73.99,"fullAddress":"end}","streetAddress":null}};</script>
+        </body></html>`,
+        { headers: { "Content-Type": "text/html" } },
+      ),
+    );
+    const r = await fetchJobDescription("strbrace1");
+    expect(r.ok).toBe(true);
+    if (!r.ok) throw new Error("expected ok");
+    expect(r.location).not.toBeNull();
+    expect(r.location?.postalCode).toBe("10001");
+    expect(r.location?.countryCode).toBe("US");
+    expect(r.location?.fullAddress).toBe("end}");
+  });
+
+  it("parseJobLocation keeps scanning past a malformed first 'location:{' block", async () => {
+    // First `"location":{` is unterminated (no matching `}` within 16kB), so the
+    // balanced scan fails. The real JobLocation comes later and must still be
+    // found.
+    const bogusPrefix = `<html><body>
+          <div class="jobsearch-JobComponent-description">body</div>
+          <script>var bogus = {"location":{"weird": "value without closing brace`;
+    const padded = bogusPrefix.padEnd(20_000, "x");
+    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+      new Response(
+        `${padded}</script>
+          <script>var real = {"location":{"__typename":"JobLocation","countryCode":"CA","postalCode":"M5V 3A8","latitude":43.64,"longitude":-79.38,"fullAddress":"Toronto ON","streetAddress":null}};</script>
+        </body></html>`,
+        { headers: { "Content-Type": "text/html" } },
+      ),
+    );
+    const r = await fetchJobDescription("scanpast1");
+    expect(r.ok).toBe(true);
+    if (!r.ok) throw new Error("expected ok");
+    expect(r.location).not.toBeNull();
+    expect(r.location?.postalCode).toBe("M5V 3A8");
+    expect(r.location?.countryCode).toBe("CA");
+  });
+
   it("handles postedToday: true", async () => {
     (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
       new Response(
