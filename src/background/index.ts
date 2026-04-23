@@ -16,7 +16,21 @@ const cache = new DistanceCache(
   },
   { ttlMs: CACHE_TTL_MS, maxEntries: CACHE_MAX_ENTRIES },
 );
-const throttle = new Throttle(1, 1000);
+
+// MV3 service workers hibernate after ~30s idle. Persist pauseUntil so a quota
+// pause we set here isn't forgotten on next wake; token state doesn't matter
+// (fresh capacity on wake is fine).
+const THROTTLE_PAUSE_KEY = "throttlePauseUntil";
+const throttle = new Throttle(1, 1000, (pauseUntil) => {
+  void chrome.storage.local.set({ [THROTTLE_PAUSE_KEY]: pauseUntil });
+});
+void (async () => {
+  const got = await chrome.storage.local.get(THROTTLE_PAUSE_KEY);
+  const stored = got[THROTTLE_PAUSE_KEY];
+  if (typeof stored !== "number") return;
+  const remaining = stored - Date.now();
+  if (remaining > 0) throttle.pauseFor(remaining);
+})();
 
 function normalizeKeyPart(s: string): string {
   return s.trim().toLowerCase().replace(/\s+/g, " ");

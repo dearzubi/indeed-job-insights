@@ -40,4 +40,22 @@ describe("Throttle", () => {
     await p;
     expect(fn).toHaveBeenCalledOnce();
   });
+
+  it("invokes onPauseChange when pauseUntil advances", () => {
+    const onPauseChange = vi.fn();
+    const t = new Throttle(1, 1000, onPauseChange);
+    t.pauseFor(5000);
+    expect(onPauseChange).toHaveBeenCalledTimes(1);
+    const firstArg = onPauseChange.mock.calls[0]?.[0];
+    expect(typeof firstArg).toBe("number");
+    expect(firstArg).toBeGreaterThan(Date.now());
+  });
+
+  it("does not invoke onPauseChange when a shorter pause is requested", () => {
+    const onPauseChange = vi.fn();
+    const t = new Throttle(1, 1000, onPauseChange);
+    t.pauseFor(10_000);
+    t.pauseFor(1000);
+    expect(onPauseChange).toHaveBeenCalledTimes(1);
+  });
 });

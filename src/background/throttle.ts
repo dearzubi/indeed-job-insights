@@ -4,16 +4,26 @@ export class Throttle {
   private readonly refillInterval: number;
   private lastRefill: number;
   private pauseUntil = 0;
+  private readonly onPauseChange: ((pauseUntil: number) => void) | undefined;
 
-  constructor(capacity: number, refillIntervalMs: number) {
+  constructor(
+    capacity: number,
+    refillIntervalMs: number,
+    onPauseChange?: (pauseUntil: number) => void,
+  ) {
     this.capacity = capacity;
     this.tokens = capacity;
     this.refillInterval = refillIntervalMs;
     this.lastRefill = Date.now();
+    this.onPauseChange = onPauseChange;
   }
 
   pauseFor(ms: number): void {
-    this.pauseUntil = Math.max(this.pauseUntil, Date.now() + ms);
+    const next = Math.max(this.pauseUntil, Date.now() + ms);
+    if (next !== this.pauseUntil) {
+      this.pauseUntil = next;
+      this.onPauseChange?.(this.pauseUntil);
+    }
   }
 
   async run<T>(fn: () => Promise<T>): Promise<T> {
