@@ -3,7 +3,6 @@ import type {
   ContentToBackground,
   DistanceDestination,
 } from "../shared/messages.ts";
-import { normalizeCityName } from "../shared/normalize.ts";
 import { DistanceCache } from "./cache.ts";
 import { fetchDrivingDistance } from "./distance.ts";
 import { Throttle } from "./throttle.ts";
@@ -19,14 +18,20 @@ const cache = new DistanceCache(
 );
 const throttle = new Throttle(1, 1000);
 
+function normalizeKeyPart(s: string): string {
+  return s.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
 function destKey(to: DistanceDestination): string {
-  if ("address" in to) return normalizeCityName(to.address);
+  // Preserve country/state tokens - they disambiguate same-name cities like
+  // Toronto, ON, Canada vs Toronto, OH, USA.
+  if ("address" in to) return normalizeKeyPart(to.address);
   // Round to ~11m so cards at near-identical coordinates share a cache entry.
   return `@${to.lat.toFixed(4)},${to.lng.toFixed(4)}`;
 }
 
 function cacheKey(from: string, to: DistanceDestination): string {
-  return `${normalizeCityName(from)}→${destKey(to)}`;
+  return `${normalizeKeyPart(from)}→${destKey(to)}`;
 }
 
 async function handleComputeDistance(msg: ContentToBackground): Promise<ComputeDistanceResponse> {
