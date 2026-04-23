@@ -1,0 +1,36 @@
+{
+  "name": "indeed-job-insights",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Indeed Job Insights: Chrome extension that surfaces driving time, keyword hits, and per-posting insights on Indeed.",
+  "type": "module",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=22",
+    "pnpm": ">=10"
+  },
+  "scripts": {
+    "preinstall": "npx only-allow@1.2.2 pnpm",
+    "dev": "node scripts/build.mjs --watch",
+    "build": "node scripts/build.mjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check": "biome check . && tsc --noEmit",
+    "lint:fix": "biome check --write ./src",
+    "format": "biome check --write .",
+    "prepare": "lefthook install"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.12",
+    "@commitlint/cli": "20.5.0",
+    "@commitlint/config-conventional": "20.5.0",
+    "@types/chrome": "0.1.40",
+    "@types/node": "25.6.0",
+    "happy-dom": "20.9.0",
+    "lefthook": "2.1.6",
+    "only-allow": "1.2.2",
+    "rolldown": "1.0.0-rc.17",
+    "typescript": "6.0.3",
+    "vitest": "4.1.5"
+  }
+}

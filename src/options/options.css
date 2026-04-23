@@ -1,0 +1,25 @@
+:root { color-scheme: light; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+body { margin: 0; background: #fafafa; }
+main { max-width: 640px; margin: 40px auto; padding: 32px; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; }
+h1 { margin: 0 0 4px 0; font-size: 22px; }
+.subtitle { color: #666; margin: 0 0 24px 0; font-size: 14px; }
+form { display: flex; flex-direction: column; gap: 18px; }
+fieldset { display: flex; flex-direction: column; gap: 16px; border: 1px solid #e5e5e5; border-radius: 6px; padding: 16px 18px 18px; margin: 0; }
+legend { font-size: 13px; font-weight: 700; color: #111; padding: 0 6px; letter-spacing: 0.2px; }
+label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: #222; }
+label.checkbox { flex-direction: row; align-items: center; gap: 8px; font-weight: 500; }
+input[type="text"], input[type="password"], textarea {
+  font: inherit; padding: 8px 10px; border: 1px solid #ccc; border-radius: 4px; background: #fff;
+}
+textarea { resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.hint { font-weight: 400; color: #777; font-size: 12px; }
+.actions { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+button { font: inherit; background: #2557a7; color: #fff; border: none; padding: 9px 18px; border-radius: 4px; cursor: pointer; font-weight: 600; }
+button:hover { background: #1e4a8e; }
+.status { color: #16a34a; font-size: 13px; font-weight: 500; }
+.status.error { color: #b91c1c; }
+.danger-zone { margin-top: 32px; padding-top: 20px; border-top: 1px solid #e5e5e5; }
+.danger-zone h2 { margin: 0 0 8px 0; font-size: 15px; color: #222; }
+.danger-zone p.hint { margin: 0 0 12px 0; line-height: 1.45; }
+.danger-zone button { background: #fff; color: #b91c1c; border: 1px solid #fca5a5; }
+.danger-zone button:hover { background: #fef2f2; border-color: #f87171; }

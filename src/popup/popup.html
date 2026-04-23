@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <h2>Indeed Job Insights</h2>
+    <label class="row">
+      <input type="checkbox" id="enabled" />
+      Extension enabled (reloads this tab)
+    </label>
+    <label class="row">
+      <input type="checkbox" id="dim" />
+      Dim zero-match cards
+    </label>
+    <label class="row">
+      <input type="checkbox" id="dimNegative" />
+      Dim when excluded &gt; keyword hits
+    </label>
+    <a id="openOptions" href="#">Open options →</a>
+    <span id="status" class="status" aria-live="polite"></span>
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

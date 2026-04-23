@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Indeed Job Insights - Options</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main>
+      <h1>Indeed Job Insights</h1>
+      <p class="subtitle">All fields are optional. Provide an address and API key for driving times; keywords power the highlighting and match badges.</p>
+      <form id="form">
+        <fieldset>
+          <legend>Location &amp; driving time</legend>
+          <label>
+            Google Maps API key
+            <input type="password" id="googleMapsApiKey" placeholder="AIza..." />
+            <span class="hint">Stored locally. Leave blank to disable driving-time badges.</span>
+          </label>
+          <label>
+            My address
+            <input type="text" id="myAddress" placeholder="Full address, or just a city (e.g. '1 High St, Woking, UK' or 'Woking')" />
+          </label>
+          <label>
+            Nearby cities (one per line)
+            <textarea id="nearbyCities" rows="4" placeholder="Toronto&#10;Brampton&#10;Oakville"></textarea>
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <legend>Keywords &amp; dimming</legend>
+          <label>
+            Keywords (one per line; whole-word, case-insensitive)
+            <textarea id="keywords" rows="6" placeholder="python&#10;react&#10;typescript"></textarea>
+          </label>
+          <label>
+            Excluded keywords (one per line; counted but not highlighted)
+            <textarea id="excludedKeywords" rows="4" placeholder="php&#10;.net&#10;on-site only"></textarea>
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" id="dimZeroMatch" />
+            Dim zero-match cards by default
+          </label>
+          <label class="checkbox">
+            <input type="checkbox" id="dimNegativeMatch" />
+            Dim cards where excluded hits outnumber keyword hits
+          </label>
+        </fieldset>
+
+        <div class="actions">
+          <button type="submit">Save</button>
+          <span id="status" class="status"></span>
+        </div>
+      </form>
+
+      <section class="danger-zone">
+        <h2>Location cache</h2>
+        <p class="hint">
+          Driving times are fetched from Google once per unique destination (by postcode, coordinates, or address) and stored locally for 30 days. Clearing the cache forces every card to be refetched on next view, which will use more Google Routes API quota. Do this if your address changed, you're debugging stale times, or you want to start fresh.
+        </p>
+        <div class="actions">
+          <button type="button" id="clearCache">Clear location cache</button>
+          <span id="cacheStatus" class="status"></span>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>

@@ -1,0 +1,122 @@
+import type { Config } from "../shared/config.ts";
+import { sanitizeLocation } from "../shared/location.ts";
+import type { ComputeDistanceResponse, DistanceDestination } from "../shared/types.ts";
+import { fetchJobDescription, type JobLocation } from "./description-fetch.ts";
+import { inject } from "./injector.ts";
+import { match } from "./matcher.ts";
+import { extractJobKey, SELECTORS } from "./selectors.ts";
+
+// Priority Order: postcode > lat/long > fullAddress > card text.
+// Postcode is composed with countryCode so Google disambiguate codes that
+// exist in multiple countries (e.g. "SW1A 1AA" vs "80000").
+export function pickDestination(
+  jobLocation: JobLocation | null,
+  cardLocation: string,
+): DistanceDestination | null {
+  if (jobLocation) {
+    if (jobLocation.postalCode) {
+      const addr = jobLocation.countryCode
+        ? `${jobLocation.postalCode}, ${jobLocation.countryCode}`
+        : jobLocation.postalCode;
+      return { address: addr };
+    }
+    if (jobLocation.latitude !== null && jobLocation.longitude !== null) {
+      return { lat: jobLocation.latitude, lng: jobLocation.longitude };
+    }
+    if (jobLocation.fullAddress) {
+      return { address: jobLocation.fullAddress };
+    }
+  }
+  const cleaned = sanitizeLocation(cardLocation);
+  return cleaned ? { address: cleaned } : null;
+}
+
+const visited = new WeakSet<HTMLElement>();
+
+export function observeCard(card: HTMLElement, config: Config): void {
+  if (visited.has(card)) return;
+  const observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (!entry.isIntersecting) continue;
+        observer.disconnect();
+        // Mark visited before awaiting so a repeatedly-failing card doesn't
+        // retry on every scroll (which would burn the throttle + API budget).
+        // The tradeoff: one-off upstream hiccups leave the card un-decorated
+        // until the next page load.
+        visited.add(card);
+        processCard(card, config).catch((e) => {
+          console.warn("[indeed-job-insights] card processing failed", e);
+        });
+      }
+    },
+    { threshold: 0.1 },
+  );
+  observer.observe(card);
+}
+
+async function processCard(card: HTMLElement, config: Config): Promise<void> {
+  const jobKey = extractJobKey(card);
+  if (!jobKey) return;
+
+  const structuredLocation =
+    card.querySelector<HTMLElement>(SELECTORS.locationText)?.textContent?.trim() ?? "";
+
+  const desc = await fetchJobDescription(jobKey);
+  // Fall back to the card's visible snippet when the /viewjob fetch fails
+  // (typically Cloudflare 403 after a burst). Better to decorate with a
+  // partial signal than to leave the card blank.
+  const fullText = desc.ok
+    ? desc.fullText
+    : (card.querySelector<HTMLElement>(SELECTORS.snippetText)?.textContent?.trim() ?? "");
+
+  const postedAge = desc.ok ? desc.postedAge : null;
+  const postedToday = desc.ok ? desc.postedToday : false;
+  const organicApplyStarts = desc.ok ? desc.organicApplyStarts : null;
+
+  const result = match(fullText, structuredLocation, config);
+
+  let distanceMinutes: number | null = null;
+  let distanceError: string | null = null;
+
+  const canComputeDistance =
+    config.myAddress.trim() !== "" && config.googleMapsApiKey.trim() !== "";
+
+  const destination = canComputeDistance
+    ? pickDestination(desc.ok ? desc.location : null, structuredLocation)
+    : null;
+
+  if (destination) {
+    try {
+      const response = (await chrome.runtime.sendMessage({
+        type: "computeDistance",
+        from: config.myAddress,
+        to: destination,
+        apiKey: config.googleMapsApiKey,
+      })) as ComputeDistanceResponse;
+      if (response.ok) {
+        distanceMinutes = response.minutes;
+      } else if (response.errorKind !== "no-route") {
+        // Swallow no-route errors (generic destinations like "Remote" or just
+        // "United Kingdom" that Google can't route to). Showing ane error is irrelevant as
+        // user can't fix them. Real errors like bad key / quota / network still surface.
+        distanceError = response.message;
+      }
+    } catch (e) {
+      // MV3 service workers go dormant; sendMessage rejects during a
+      // reload/update. Keep the rest of the card's decorations intact.
+      distanceError = `worker unavailable: ${String(e)}`;
+    }
+  }
+
+  inject(card, result, {
+    distanceMinutes,
+    distanceError,
+    dimZeroMatch: config.dimZeroMatch,
+    dimNegativeMatch: config.dimNegativeMatch,
+    excludedKeywords: config.excludedKeywords,
+    postedAge,
+    postedToday,
+    organicApplyStarts,
+  });
+}
