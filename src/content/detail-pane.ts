@@ -163,7 +163,18 @@ export function startDetailPaneHighlighter(config: Config): () => void {
 
   pickAndApply();
 
-  const mo = new MutationObserver(() => pickAndApply());
+  // Debounce via rAF: the observer on document.body fires for every Indeed
+  // mutation (hovers, lazy images, tooltips), and our own insights insertion
+  // would otherwise retrigger it synchronously in a loop.
+  let scheduled = false;
+  const mo = new MutationObserver(() => {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(() => {
+      scheduled = false;
+      pickAndApply();
+    });
+  });
   mo.observe(document.body, { childList: true, subtree: true });
 
   return () => mo.disconnect();
