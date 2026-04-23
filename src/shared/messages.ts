@@ -30,18 +30,6 @@ export interface ComputeDistanceError {
 
 export type ComputeDistanceResponse = ComputeDistanceSuccess | ComputeDistanceError;
 
-export interface SetToggleMessage {
-  type: "setToggle";
-  key: "dimZeroMatch" | "dimNegativeMatch" | "paused";
-  value: boolean;
-}
-
-export interface SetToggleResponse {
-  ok: true;
-}
-
 export type ContentToBackground = ComputeDistanceRequest;
-export type PopupToContent = SetToggleMessage;
 
 export type BackgroundResponse = ComputeDistanceResponse;
-export type ContentResponse = SetToggleResponse;
