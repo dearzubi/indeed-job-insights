@@ -1,8 +1,4 @@
-const REGEX_SPECIAL = /[.*+?^${}()|[\]\\]/g;
-
-function escapeRegex(s: string): string {
-  return s.replace(REGEX_SPECIAL, "\\$&");
-}
+import { escapeRegex } from "../shared/normalize.ts";
 
 const HIGHLIGHT_CLASSES = ["ext-kw-hit", "ext-kw-excluded"] as const;
 

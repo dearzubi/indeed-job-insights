@@ -1,6 +1,6 @@
 import type { Config } from "../shared/config.ts";
 import { sanitizeLocation } from "../shared/location.ts";
-import { buildWholeWordRegex, normalizeCityName } from "../shared/normalize.ts";
+import { buildWholeWordRegex, escapeRegex, normalizeCityName } from "../shared/normalize.ts";
 
 export type CityHit = "home" | "home-mentioned" | "nearby" | "none";
 export type WorkMode = "remote" | "hybrid" | "onsite";
@@ -19,10 +19,6 @@ export interface MatchResult {
   keywordHits: KeywordHit[];
   excludedHitsCount: number;
   isZeroMatch: boolean;
-}
-
-function escapeRegex(s: string): string {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function classifyLocation(lowerText: string, structuredLocation: string, config: Config): CityHit {

@@ -19,7 +19,7 @@ export function normalizeKeyword(input: string): string {
 
 const REGEX_SPECIAL = /[.*+?^${}()|[\]\\]/g;
 
-function escapeRegex(s: string): string {
+export function escapeRegex(s: string): string {
   return s.replace(REGEX_SPECIAL, "\\$&");
 }
 
