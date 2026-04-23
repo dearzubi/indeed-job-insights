@@ -36,12 +36,18 @@ const visited = new WeakSet<HTMLElement>();
 export function observeCard(card: HTMLElement, config: Config): void {
   if (visited.has(card)) return;
   const observer = new IntersectionObserver(
-    async (entries) => {
+    (entries) => {
       for (const entry of entries) {
         if (!entry.isIntersecting) continue;
         observer.disconnect();
+        // Mark visited before awaiting so a repeatedly-failing card doesn't
+        // retry on every scroll (which would burn the throttle + API budget).
+        // The tradeoff: one-off upstream hiccups leave the card un-decorated
+        // until the next page load.
         visited.add(card);
-        await processCard(card, config);
+        processCard(card, config).catch((e) => {
+          console.warn("[indeed-job-insights] card processing failed", e);
+        });
       }
     },
     { threshold: 0.1 },
