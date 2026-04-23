@@ -34,6 +34,16 @@ describe("match - location classification", () => {
     const r = match("We are mississaugac", "Toronto, ON", baseConfig);
     expect(r.cityHit).toBe("none");
   });
+  it("home-mentioned matches when body uses punctuation (e.g. apostrophes)", () => {
+    const cfg = { ...baseConfig, homeCity: "St. John's", nearbyCities: [] };
+    const r = match("We're hiring in St. John's for next quarter.", "Halifax, NS", cfg);
+    expect(r.cityHit).toBe("home-mentioned");
+  });
+  it("nearby matches when nearby city uses punctuation", () => {
+    const cfg = { ...baseConfig, homeCity: "Mississauga", nearbyCities: ["St. Catharines"] };
+    const r = match("Office located in St. Catharines.", "Buffalo, NY", cfg);
+    expect(r.cityHit).toBe("nearby");
+  });
 });
 
 describe("match - work mode", () => {

@@ -21,18 +21,21 @@ export interface MatchResult {
   isZeroMatch: boolean;
 }
 
-function classifyLocation(lowerText: string, structuredLocation: string, config: Config): CityHit {
+function classifyLocation(normText: string, structuredLocation: string, config: Config): CityHit {
   const cleanedStructured = sanitizeLocation(structuredLocation);
   const normStructured = normalizeCityName(cleanedStructured);
   const normHome = normalizeCityName(config.homeCity);
   if (normHome && normStructured === normHome) return "home";
-  if (normHome && new RegExp(`\\b${escapeRegex(normHome)}\\b`, "i").test(lowerText)) {
+  // `normText` is already normalised the same way city names are (punctuation
+  // stripped), so an exact whole-word regex reliably matches needles like
+  // "St. John's" even when the body still uses punctuation.
+  if (normHome && new RegExp(`\\b${escapeRegex(normHome)}\\b`, "i").test(normText)) {
     return "home-mentioned";
   }
   for (const nearby of config.nearbyCities) {
     const norm = normalizeCityName(nearby);
     if (!norm) continue;
-    if (new RegExp(`\\b${escapeRegex(norm)}\\b`, "i").test(lowerText)) return "nearby";
+    if (new RegExp(`\\b${escapeRegex(norm)}\\b`, "i").test(normText)) return "nearby";
   }
   return "none";
 }
@@ -45,8 +48,8 @@ function detectWorkMode(structuredLocation: string): WorkMode {
 }
 
 export function match(fullText: string, structuredLocation: string, config: Config): MatchResult {
-  const lower = fullText.toLowerCase();
-  const cityHit = classifyLocation(lower, structuredLocation, config);
+  const normText = normalizeCityName(fullText);
+  const cityHit = classifyLocation(normText, structuredLocation, config);
 
   const keywordHits: KeywordHit[] = [];
   if (config.keywords.length > 0) {
@@ -68,7 +71,7 @@ export function match(fullText: string, structuredLocation: string, config: Conf
   }
 
   const workMode = detectWorkMode(structuredLocation);
-  const cityPillLabel = makeCityPillLabel(cityHit, lower, config);
+  const cityPillLabel = makeCityPillLabel(cityHit, normText, config);
   const workModePillLabel = makeWorkModePillLabel(workMode);
   // When the user has configured keywords, they are the primary relevance signal:
   // any card with zero keyword hits is zero-match regardless of city/workMode. When
