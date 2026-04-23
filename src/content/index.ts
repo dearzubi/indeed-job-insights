@@ -26,8 +26,4 @@ function waitForResults(callback: () => void): void {
   setTimeout(() => mo.disconnect(), 15000);
 }
 
-try {
-  void boot();
-} catch (e) {
-  console.error("[indeed-job-insights] boot failed", e);
-}
+boot().catch((e) => console.error("[indeed-job-insights] boot failed", e));
