@@ -81,20 +81,26 @@ async function processCard(card: HTMLElement, config: Config): Promise<void> {
     ? pickDestination(desc.ok ? desc.location : null, structuredLocation)
     : null;
   if (destination) {
-    const response = (await chrome.runtime.sendMessage({
-      type: "computeDistance",
-      from: config.homeCity,
-      to: destination,
-      apiKey: config.googleMapsApiKey,
-    })) as ComputeDistanceResponse;
-    if (response.ok) {
-      distanceMinutes = response.minutes;
-    } else if (response.errorKind !== "no-route") {
-      // Swallow no-route errors (generic destinations like "Remote" or just
-      // "United Kingdom" that Google can't route to). Showing a red ⚠ for
-      // these is noise — the user can't fix them. Real errors like bad key /
-      // quota / network still surface.
-      distanceError = response.message;
+    try {
+      const response = (await chrome.runtime.sendMessage({
+        type: "computeDistance",
+        from: config.homeCity,
+        to: destination,
+        apiKey: config.googleMapsApiKey,
+      })) as ComputeDistanceResponse;
+      if (response.ok) {
+        distanceMinutes = response.minutes;
+      } else if (response.errorKind !== "no-route") {
+        // Swallow no-route errors (generic destinations like "Remote" or just
+        // "United Kingdom" that Google can't route to). Showing a red ⚠ for
+        // these is noise - the user can't fix them. Real errors like bad key /
+        // quota / network still surface.
+        distanceError = response.message;
+      }
+    } catch (e) {
+      // MV3 service workers go dormant; sendMessage rejects during a
+      // reload/update. Keep the rest of the card's decorations intact.
+      distanceError = `worker unavailable: ${String(e)}`;
     }
   }
 
