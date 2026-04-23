@@ -1,3 +1,4 @@
+import { fetchWithRetry } from "../shared/fetch-with-retry.ts";
 import type { ComputeDistanceResponse, DistanceDestination } from "../shared/messages.ts";
 
 interface Params {
@@ -5,14 +6,6 @@ interface Params {
   to: DistanceDestination;
   apiKey: string;
 }
-
-function buildWaypoint(dest: DistanceDestination): object {
-  if ("address" in dest) return { address: dest.address };
-  return { location: { latLng: { latitude: dest.lat, longitude: dest.lng } } };
-}
-
-const ENDPOINT = "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix";
-const FIELD_MASK = "originIndex,destinationIndex,duration,distanceMeters,status";
 
 interface RouteMatrixElement {
   originIndex?: number;
@@ -22,7 +15,30 @@ interface RouteMatrixElement {
   status?: { code?: number; message?: string };
 }
 
-function parseDurationSeconds(value: string | undefined): number | null {
+interface AddressWaypoint {
+  address: string;
+}
+
+interface LocationWaypoint {
+  location: {
+    latLng: {
+      latitude: number;
+      longitude: number;
+    };
+  };
+}
+
+type Waypoint = AddressWaypoint | LocationWaypoint;
+
+const ENDPOINT = "https://routes.googleapis.com/distanceMatrix/v2:computeRouteMatrix";
+const FIELD_MASK = "originIndex,destinationIndex,duration,distanceMeters,status";
+
+function buildWaypoint(dest: DistanceDestination): Waypoint {
+  if ("address" in dest) return { address: dest.address };
+  return { location: { latLng: { latitude: dest.lat, longitude: dest.lng } } };
+}
+
+function parseDurationSeconds(value?: string): number | null {
   if (!value) return null;
   const match = /^(\d+)s$/.exec(value);
   if (!match?.[1]) return null;
@@ -39,7 +55,7 @@ export async function fetchDrivingDistance(params: Params): Promise<ComputeDista
 
   let response: Response;
   try {
-    response = await fetch(ENDPOINT, {
+    response = await fetchWithRetry(ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -77,8 +93,9 @@ export async function fetchDrivingDistance(params: Params): Promise<ComputeDista
     return { ok: false, errorKind: "network", message: `parse: ${String(e)}` };
   }
 
-  // The Routes API can return a 200 with an object-shaped error body instead
-  // of the expected RouteMatrixElement array. Surface Google's error.message.
+  // Guard against non-array bodies we don't expect. Some Google APIs have been
+  // observed to return an object-shaped error payload with a 200 status; surface
+  // Google's error.message when that happens.
   if (!Array.isArray(parsed)) {
     const maybeErr = (parsed as { error?: { message?: string } } | null)?.error?.message;
     return { ok: false, errorKind: "unknown", message: maybeErr ?? "unexpected response shape" };

@@ -1,15 +1,21 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { fetchDrivingDistance } from "./distance.ts";
 
-const g = globalThis as typeof globalThis & { fetch: typeof fetch };
-
 describe("fetchDrivingDistance", () => {
+  let fetchMock: Mock<typeof fetch>;
+
   beforeEach(() => {
-    g.fetch = vi.fn();
+    vi.useFakeTimers();
+    fetchMock = vi.fn<typeof fetch>();
+    vi.stubGlobal("fetch", fetchMock);
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
   });
 
   it("returns minutes and meters on OK response", async () => {
-    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+    fetchMock.mockResolvedValue(
       new Response(
         JSON.stringify([
           {
@@ -31,7 +37,7 @@ describe("fetchDrivingDistance", () => {
   });
 
   it("returns invalid-key on HTTP 403", async () => {
-    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+    fetchMock.mockResolvedValue(
       new Response(JSON.stringify({ error: { message: "bad key" } }), { status: 403 }),
     );
     const r = await fetchDrivingDistance({ from: "a", to: { address: "b" }, apiKey: "k" });
@@ -42,17 +48,20 @@ describe("fetchDrivingDistance", () => {
     });
   });
 
-  it("returns rate-limited on HTTP 429", async () => {
-    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+  it("returns rate-limited on HTTP 429 after retries are exhausted", async () => {
+    fetchMock.mockResolvedValue(
       new Response(JSON.stringify({ error: { message: "too many" } }), { status: 429 }),
     );
-    const r = await fetchDrivingDistance({ from: "a", to: { address: "b" }, apiKey: "k" });
+    const p = fetchDrivingDistance({ from: "a", to: { address: "b" }, apiKey: "k" });
+    await vi.runAllTimersAsync();
+    const r = await p;
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errorKind).toBe("rate-limited");
+    expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 
   it("returns no-route on per-element NOT_FOUND", async () => {
-    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+    fetchMock.mockResolvedValue(
       new Response(
         JSON.stringify([
           {
@@ -69,7 +78,7 @@ describe("fetchDrivingDistance", () => {
   });
 
   it("sends a latLng waypoint when destination has coordinates", async () => {
-    const fetchMock = vi.fn().mockResolvedValue(
+    fetchMock.mockResolvedValue(
       new Response(
         JSON.stringify([
           {
@@ -82,20 +91,24 @@ describe("fetchDrivingDistance", () => {
         ]),
       ),
     );
-    g.fetch = fetchMock;
     await fetchDrivingDistance({ from: "Home", to: { lat: 51.319, lng: -0.559 }, apiKey: "k" });
-    const call = fetchMock.mock.calls[0];
-    if (!call) throw new Error("fetch was not called");
-    const init = call[1] as { body: string };
-    const body = JSON.parse(init.body);
-    expect(body.destinations[0].waypoint).toEqual({
-      location: { latLng: { latitude: 51.319, longitude: -0.559 } },
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const [, init] = fetchMock.mock.lastCall ?? [];
+    expect(init?.body).toEqual(expect.any(String));
+    const body = JSON.parse(init?.body as string);
+    expect(body).toMatchObject({
+      origins: expect.arrayContaining([expect.objectContaining({ waypoint: { address: "Home" } })]),
+      destinations: expect.arrayContaining([
+        expect.objectContaining({
+          waypoint: { location: { latLng: { latitude: 51.319, longitude: -0.559 } } },
+        }),
+      ]),
     });
-    expect(body.origins[0].waypoint).toEqual({ address: "Home" });
   });
 
   it("surfaces error.message when HTTP 200 returns an object error body", async () => {
-    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+    fetchMock.mockResolvedValue(
       new Response(JSON.stringify({ error: { code: 400, message: "Origin not recognized" } })),
     );
     const r = await fetchDrivingDistance({ from: "???", to: { address: "b" }, apiKey: "k" });
@@ -106,10 +119,35 @@ describe("fetchDrivingDistance", () => {
     });
   });
 
-  it("returns network on fetch throw", async () => {
-    (g.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("offline"));
-    const r = await fetchDrivingDistance({ from: "a", to: { address: "b" }, apiKey: "k" });
+  it("recovers when a transient 503 is followed by a successful response", async () => {
+    fetchMock.mockResolvedValueOnce(new Response("boom", { status: 503 }));
+    fetchMock.mockResolvedValueOnce(
+      new Response(
+        JSON.stringify([
+          {
+            originIndex: 0,
+            destinationIndex: 0,
+            duration: "900s",
+            distanceMeters: 10_000,
+            status: {},
+          },
+        ]),
+      ),
+    );
+    const p = fetchDrivingDistance({ from: "a", to: { address: "b" }, apiKey: "k" });
+    await vi.runAllTimersAsync();
+    const r = await p;
+    expect(r).toEqual({ ok: true, minutes: 15, meters: 10_000, cached: false });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("returns network error kind after fetch keeps throwing through all retries", async () => {
+    fetchMock.mockRejectedValue(new Error("offline"));
+    const p = fetchDrivingDistance({ from: "a", to: { address: "b" }, apiKey: "k" });
+    await vi.runAllTimersAsync();
+    const r = await p;
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errorKind).toBe("network");
+    expect(fetchMock).toHaveBeenCalledTimes(4);
   });
 });

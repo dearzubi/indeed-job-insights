@@ -7,7 +7,7 @@ import { DistanceCache } from "./cache.ts";
 import { fetchDrivingDistance } from "./distance.ts";
 import { Throttle } from "./throttle.ts";
 
-const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 Days
 const CACHE_MAX_ENTRIES = 500;
 const cache = new DistanceCache(
   {
@@ -37,8 +37,6 @@ function normalizeKeyPart(s: string): string {
 }
 
 function destKey(to: DistanceDestination): string {
-  // Preserve country/state tokens - they disambiguate same-name cities like
-  // Toronto, ON, Canada vs Toronto, OH, USA.
   if ("address" in to) return normalizeKeyPart(to.address);
   // Round to ~11m so cards at near-identical coordinates share a cache entry.
   return `@${to.lat.toFixed(4)},${to.lng.toFixed(4)}`;
@@ -77,9 +75,6 @@ async function handleComputeDistance(msg: ContentToBackground): Promise<ComputeD
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   const msg = message as ContentToBackground;
   if (msg.type === "computeDistance") {
-    // Both resolution paths must call sendResponse: a missed call leaves the
-    // content script awaiting sendMessage until MV3 times it out, blocking the
-    // card's IntersectionObserver for seconds.
     handleComputeDistance(msg).then(sendResponse, (e: unknown) => {
       sendResponse({ ok: false, errorKind: "unknown", message: String(e) });
     });

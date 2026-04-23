@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { Throttle } from "./throttle.ts";
+import { MAX_PAUSE_FOR_MS, Throttle } from "./throttle.ts";
 
 describe("Throttle", () => {
   beforeEach(() => {
@@ -29,7 +29,7 @@ describe("Throttle", () => {
     expect(fn).toHaveBeenCalledTimes(2);
   });
 
-  it("honors pause window (backoff)", async () => {
+  it("honors pause window", async () => {
     const t = new Throttle(10, 100);
     t.pauseFor(5000);
     const fn = vi.fn().mockResolvedValue("z");
@@ -42,13 +42,11 @@ describe("Throttle", () => {
   });
 
   it("invokes onPauseChange when pauseUntil advances", () => {
-    const onPauseChange = vi.fn();
+    const onPauseChange = vi.fn<(pauseUntil: number) => void>();
     const t = new Throttle(1, 1000, onPauseChange);
     t.pauseFor(5000);
-    expect(onPauseChange).toHaveBeenCalledTimes(1);
-    const firstArg = onPauseChange.mock.calls[0]?.[0];
-    expect(typeof firstArg).toBe("number");
-    expect(firstArg).toBeGreaterThan(Date.now());
+    expect(onPauseChange).toHaveBeenCalledOnce();
+    expect(onPauseChange).toHaveBeenLastCalledWith(Date.now() + 5000);
   });
 
   it("does not invoke onPauseChange when a shorter pause is requested", () => {
@@ -57,5 +55,33 @@ describe("Throttle", () => {
     t.pauseFor(10_000);
     t.pauseFor(1000);
     expect(onPauseChange).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    ["NaN", Number.NaN],
+    ["Infinity", Number.POSITIVE_INFINITY],
+    ["negative", -1000],
+    ["zero", 0],
+  ])("ignores pauseFor(%s) without notifying onPauseChange", async (_label, value) => {
+    const onPauseChange = vi.fn();
+    const t = new Throttle(1, 1000, onPauseChange);
+    t.pauseFor(value);
+    expect(onPauseChange).not.toHaveBeenCalled();
+  });
+
+  it("clamps pauseFor(ms) to the MAX_PAUSE_FOR_MS ceiling", async () => {
+    const onPauseChange = vi.fn<(pauseUntil: number) => void>();
+    const t = new Throttle(1, 1000, onPauseChange);
+    t.pauseFor(MAX_PAUSE_FOR_MS + 60 * 1000);
+    expect(onPauseChange).toHaveBeenCalledOnce();
+    expect(onPauseChange).toHaveBeenLastCalledWith(Date.now() + MAX_PAUSE_FOR_MS);
+
+    const fn = vi.fn<() => Promise<string>>().mockResolvedValue("unblocked");
+    const p = t.run(fn);
+    vi.advanceTimersByTime(MAX_PAUSE_FOR_MS - 1);
+    expect(fn).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    await p;
+    expect(fn).toHaveBeenCalledOnce();
   });
 });

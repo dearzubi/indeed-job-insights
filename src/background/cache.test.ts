@@ -39,9 +39,6 @@ describe("DistanceCache", () => {
   });
 
   it("keeps both entries when set calls overlap", async () => {
-    // Async storage: resolve on a microtask so both set() bodies interleave
-    // their load-before-save. Without the internal queue the later write
-    // would overwrite the earlier one.
     const backing: Record<string, unknown> = {};
     const asyncStorage = {
       get: vi.fn(async (key: string) => {
