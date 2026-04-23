@@ -59,28 +59,38 @@ form.addEventListener("submit", async (e) => {
   const home = homeCity.value.trim();
   const key = apiKey.value.trim();
 
-  await saveConfig({
-    homeCity: home,
-    nearbyCities: parseList(nearbyCities.value)
-      .map((c) => normalizeCityName(c))
-      .filter(Boolean),
-    keywords: parseList(keywords.value)
-      .map((k) => normalizeKeyword(k))
-      .filter(Boolean),
-    excludedKeywords: parseList(excludedKeywords.value)
-      .map((k) => normalizeKeyword(k))
-      .filter(Boolean),
-    googleMapsApiKey: key,
-    dimZeroMatch: dim.checked,
-    dimNegativeMatch: dimNeg.checked,
-  });
-  status.textContent = "Saved.";
+  try {
+    await saveConfig({
+      homeCity: home,
+      nearbyCities: parseList(nearbyCities.value)
+        .map((c) => normalizeCityName(c))
+        .filter(Boolean),
+      keywords: parseList(keywords.value)
+        .map((k) => normalizeKeyword(k))
+        .filter(Boolean),
+      excludedKeywords: parseList(excludedKeywords.value)
+        .map((k) => normalizeKeyword(k))
+        .filter(Boolean),
+      googleMapsApiKey: key,
+      dimZeroMatch: dim.checked,
+      dimNegativeMatch: dimNeg.checked,
+    });
+    status.textContent = "Saved.";
+  } catch (err) {
+    status.textContent = `Save failed: ${String(err)}`;
+    status.classList.add("error");
+  }
 });
 
 clearCacheBtn.addEventListener("click", async () => {
-  await chrome.storage.local.remove(CACHE_STORAGE_KEY);
-  cacheStatus.textContent = "Cache cleared.";
-  cacheStatus.classList.remove("error");
+  try {
+    await chrome.storage.local.remove(CACHE_STORAGE_KEY);
+    cacheStatus.textContent = "Cache cleared.";
+    cacheStatus.classList.remove("error");
+  } catch (err) {
+    cacheStatus.textContent = `Clear failed: ${String(err)}`;
+    cacheStatus.classList.add("error");
+  }
 });
 
 void hydrate();
