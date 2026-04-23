@@ -1,4 +1,4 @@
-import { DEFAULT_CONFIG, loadConfig, saveConfig } from "../shared/config.ts";
+import { loadConfig, saveConfig } from "../shared/config.ts";
 import { normalizeCityName, normalizeKeyword } from "../shared/normalize.ts";
 
 const $ = <T extends HTMLElement>(id: string): T => {
@@ -60,7 +60,6 @@ form.addEventListener("submit", async (e) => {
   const key = apiKey.value.trim();
 
   await saveConfig({
-    ...DEFAULT_CONFIG,
     homeCity: home,
     nearbyCities: parseList(nearbyCities.value)
       .map((c) => normalizeCityName(c))
