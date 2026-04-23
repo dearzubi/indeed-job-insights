@@ -77,8 +77,13 @@ export async function fetchDrivingDistance(params: Params): Promise<ComputeDista
     return { ok: false, errorKind: "network", message: `parse: ${String(e)}` };
   }
 
-  const arr = parsed as RouteMatrixElement[] | undefined;
-  const element = Array.isArray(arr) ? arr[0] : undefined;
+  // The Routes API can return a 200 with an object-shaped error body instead
+  // of the expected RouteMatrixElement array. Surface Google's error.message.
+  if (!Array.isArray(parsed)) {
+    const maybeErr = (parsed as { error?: { message?: string } } | null)?.error?.message;
+    return { ok: false, errorKind: "unknown", message: maybeErr ?? "unexpected response shape" };
+  }
+  const element = (parsed as RouteMatrixElement[])[0];
   if (!element) {
     return { ok: false, errorKind: "unknown", message: "empty response" };
   }
