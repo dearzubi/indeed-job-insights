@@ -2,6 +2,8 @@
 
 A Chrome extension that decorates Indeed job listings with information that helps you triage postings faster, without clicking into every card.
 
+![Indeed cards and detail pane decorated with keyword hits, driving time, work mode, must-have skills, and employer insights](docs/images/insights_3.png)
+
 ## What you get
 
 - **Driving time from your address** shown on each card (optional; needs a Google Maps API key).
@@ -18,6 +20,8 @@ A Chrome extension that decorates Indeed job listings with information that help
   - Cards where excluded keywords outnumber your keyword hits.
 
 Everything is cached locally and rate-limited, so repeated scrolling stays fast and stays well under API free tiers. All settings are optional: install it and it works out of the box for keyword highlighting and pills; add an address and API key when you want driving times.
+
+![Search results with inline keyword highlights and per-card decorations](docs/images/insights.png)
 
 ## Install the extension
 
@@ -66,11 +70,15 @@ Click the extension icon and pick **Open options** (or right-click the icon and 
 
 Click **Save** on the main form to persist changes. Your settings stay on your machine (`chrome.storage.local`); nothing syncs to Google.
 
+<p align="center"><img src="docs/images/options.png" alt="Options page with address, API key, keywords, excluded keywords, dimming toggles, and location cache stats" width="420"></p>
+
 ## The popup
 
 Click the toolbar icon for quick toggles:
 - **Extension enabled**: turn the whole thing off without uninstalling. Toggling this reloads the current tab so the change takes effect immediately.
 - **Dim zero-match cards** and **Dim when excluded > keyword hits**: same as the options page, for one-click access.
+
+<p align="center"><img src="docs/images/popup.png" alt="Toolbar popup with three checkboxes and an Open options link" width="320"></p>
 
 ## Using it
 
@@ -80,6 +88,8 @@ Open any Indeed page. The extension runs automatically on:
 - Any posting page or detail pane you land on from there.
 
 As cards scroll into view, the extension fetches each posting's detail page in the background (rate-limited to one request per second so Indeed's bot protection doesn't kick in), extracts location and insight data, computes driving time via Google Maps (if configured), and renders everything as a footer inside each card. The right-hand detail pane gets the must-have skills and employer insights panels above the description.
+
+![Cards in the list view dimmed when excluded keywords outweigh keyword hits](docs/images/insights_2.png)
 
 ## Tips
 
@@ -94,3 +104,7 @@ As cards scroll into view, the extension fetches each posting's detail page in t
   - Requests to Google's Routes API with your address and each listing's location (only when you've configured an API key).
   - Requests to Indeed's own `/viewjob` endpoint (the same one your browser would hit if you clicked the card).
 - Your API key, address, keywords, cities, toggle state, and cached driving times are stored in `chrome.storage.local`. Nothing is synced across devices.
+
+---
+
+Built with ❤️ and [Claude Code](https://claude.com/claude-code).
