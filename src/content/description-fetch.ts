@@ -219,14 +219,12 @@ export async function fetchJobDescription(jobKey: string): Promise<DescriptionRe
   try {
     response = await fetch(url, { credentials: "include" });
   } catch (e) {
-    const result: DescriptionResult = { ok: false, error: `fetch: ${String(e)}` };
-    cache.set(jobKey, result);
-    return result;
+    // Don't cache transient errors - let the next viewport intersection retry
+    // once throttling/Cloudflare has recovered.
+    return { ok: false, error: `fetch: ${String(e)}` };
   }
   if (!response.ok) {
-    const result: DescriptionResult = { ok: false, error: `http ${response.status}` };
-    cache.set(jobKey, result);
-    return result;
+    return { ok: false, error: `http ${response.status}` };
   }
 
   const html = await response.text();
