@@ -47,6 +47,37 @@ describe("fetchJobDescription", () => {
     expect(r.ok).toBe(false);
   });
 
+  it("does not cache transient fetch rejections", async () => {
+    const fetchMock = g.fetch as ReturnType<typeof vi.fn>;
+    fetchMock.mockRejectedValueOnce(new Error("cloudflare blip"));
+    fetchMock.mockResolvedValueOnce(
+      new Response(`<div class="jobsearch-JobComponent-description">retried body</div>`, {
+        headers: { "Content-Type": "text/html" },
+      }),
+    );
+    const first = await fetchJobDescription("retry1");
+    expect(first.ok).toBe(false);
+    const second = await fetchJobDescription("retry1");
+    expect(second.ok).toBe(true);
+    if (second.ok) expect(second.fullText).toContain("retried body");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not cache HTTP error responses", async () => {
+    const fetchMock = g.fetch as ReturnType<typeof vi.fn>;
+    fetchMock.mockResolvedValueOnce(new Response("forbidden", { status: 403 }));
+    fetchMock.mockResolvedValueOnce(
+      new Response(`<div class="jobsearch-JobComponent-description">ok now</div>`, {
+        headers: { "Content-Type": "text/html" },
+      }),
+    );
+    const first = await fetchJobDescription("retry2");
+    expect(first.ok).toBe(false);
+    const second = await fetchJobDescription("retry2");
+    expect(second.ok).toBe(true);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it("returns hiring insights when embedded JSON is present", async () => {
     (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
       new Response(

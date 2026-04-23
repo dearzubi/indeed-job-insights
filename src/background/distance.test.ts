@@ -94,6 +94,18 @@ describe("fetchDrivingDistance", () => {
     expect(body.origins[0].waypoint).toEqual({ address: "Home" });
   });
 
+  it("surfaces error.message when HTTP 200 returns an object error body", async () => {
+    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+      new Response(JSON.stringify({ error: { code: 400, message: "Origin not recognized" } })),
+    );
+    const r = await fetchDrivingDistance({ from: "???", to: { address: "b" }, apiKey: "k" });
+    expect(r).toEqual({
+      ok: false,
+      errorKind: "unknown",
+      message: "Origin not recognized",
+    });
+  });
+
   it("returns network on fetch throw", async () => {
     (g.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("offline"));
     const r = await fetchDrivingDistance({ from: "a", to: { address: "b" }, apiKey: "k" });

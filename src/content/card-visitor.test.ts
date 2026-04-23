@@ -66,6 +66,21 @@ describe("pickDestination", () => {
     expect(pickDestination(null, "Remote")).toBeNull();
   });
 
+  it("treats empty-string postalCode as missing and falls through", () => {
+    expect(
+      pickDestination(
+        {
+          postalCode: "",
+          latitude: 51.31903,
+          longitude: -0.55893,
+          fullAddress: "Woking",
+          countryCode: "GB",
+        },
+        "Woking",
+      ),
+    ).toEqual({ lat: 51.31903, lng: -0.55893 });
+  });
+
   it("uses postcode alone when countryCode is missing", () => {
     expect(
       pickDestination(

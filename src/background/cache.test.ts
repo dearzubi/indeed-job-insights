@@ -38,6 +38,31 @@ describe("DistanceCache", () => {
     expect(await cache.get("a→b")).toBeNull();
   });
 
+  it("keeps both entries when set calls overlap", async () => {
+    // Async storage: resolve on a microtask so both set() bodies interleave
+    // their load-before-save. Without the internal queue the later write
+    // would overwrite the earlier one.
+    const backing: Record<string, unknown> = {};
+    const asyncStorage = {
+      get: vi.fn(async (key: string) => {
+        await Promise.resolve();
+        return { [key]: backing[key] };
+      }),
+      set: vi.fn(async (obj: Record<string, unknown>) => {
+        await Promise.resolve();
+        Object.assign(backing, obj);
+      }),
+    };
+    const cache = new DistanceCache(asyncStorage, { ttlMs: 10_000, maxEntries: 100 });
+    const now = Date.now();
+    await Promise.all([
+      cache.set("k1", { meters: 1, minutes: 1, fetchedAt: now }),
+      cache.set("k2", { meters: 2, minutes: 2, fetchedAt: now }),
+    ]);
+    expect(await cache.get("k1")).not.toBeNull();
+    expect(await cache.get("k2")).not.toBeNull();
+  });
+
   it("evicts oldest entries when over maxEntries", async () => {
     const cache = new DistanceCache(storage, { ttlMs: 1_000_000, maxEntries: 3 });
     const now = Date.now();
