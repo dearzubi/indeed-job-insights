@@ -22,29 +22,42 @@ export class DistanceCache {
     private readonly opts: CacheOptions,
   ) {}
 
-  async get(key: string): Promise<DistanceCacheEntry | null> {
-    const all = await this.loadAll();
-    const entry = all[key];
-    if (!entry) return null;
-    if (Date.now() - entry.fetchedAt > this.opts.ttlMs) {
-      delete all[key];
-      await this.saveAll(all);
-      return null;
-    }
-    return entry;
+  // Serialize all storage read-modify-write cycles so concurrent get/set
+  // calls can't clobber each other's writes.
+  private queue: Promise<unknown> = Promise.resolve();
+  private enqueue<T>(fn: () => Promise<T>): Promise<T> {
+    const next = this.queue.then(fn, fn);
+    this.queue = next.catch(() => undefined);
+    return next;
   }
 
-  async set(key: string, entry: DistanceCacheEntry): Promise<void> {
-    const all = await this.loadAll();
-    all[key] = entry;
-    const entries = Object.entries(all);
-    if (entries.length > this.opts.maxEntries) {
-      entries.sort((a, b) => a[1].fetchedAt - b[1].fetchedAt);
-      const trimmed = Object.fromEntries(entries.slice(entries.length - this.opts.maxEntries));
-      await this.saveAll(trimmed);
-      return;
-    }
-    await this.saveAll(all);
+  get(key: string): Promise<DistanceCacheEntry | null> {
+    return this.enqueue(async () => {
+      const all = await this.loadAll();
+      const entry = all[key];
+      if (!entry) return null;
+      if (Date.now() - entry.fetchedAt > this.opts.ttlMs) {
+        delete all[key];
+        await this.saveAll(all);
+        return null;
+      }
+      return entry;
+    });
+  }
+
+  set(key: string, entry: DistanceCacheEntry): Promise<void> {
+    return this.enqueue(async () => {
+      const all = await this.loadAll();
+      all[key] = entry;
+      const entries = Object.entries(all);
+      if (entries.length > this.opts.maxEntries) {
+        entries.sort((a, b) => a[1].fetchedAt - b[1].fetchedAt);
+        const trimmed = Object.fromEntries(entries.slice(entries.length - this.opts.maxEntries));
+        await this.saveAll(trimmed);
+        return;
+      }
+      await this.saveAll(all);
+    });
   }
 
   private async loadAll(): Promise<Record<string, DistanceCacheEntry>> {
