@@ -27,6 +27,9 @@ export type DescriptionResult =
   | { ok: false; error: string };
 
 const cache = new Map<string, DescriptionResult>();
+// De-dup concurrent callers so N simultaneous observers for the same jobKey
+// share a single network fetch instead of each burning a throttle slot.
+const inFlight = new Map<string, Promise<DescriptionResult>>();
 
 // Serialize /viewjob fetches with a minimum interval so a burst of card-view
 // events doesn't trip Indeed's Cloudflare bot protection (which returns 403 and
@@ -44,6 +47,7 @@ function waitTurn(): Promise<void> {
 
 export function clearDescriptionCache(): void {
   cache.clear();
+  inFlight.clear();
   nextAllowed = 0;
 }
 
@@ -221,16 +225,8 @@ function parseJobLocation(html: string): JobLocation | null {
   return null;
 }
 
-export async function fetchJobDescription(jobKey: string): Promise<DescriptionResult> {
-  const cached = cache.get(jobKey);
-  if (cached) return cached;
-
+async function doFetchJobDescription(jobKey: string): Promise<DescriptionResult> {
   await waitTurn();
-
-  // Re-check the cache after the wait - another concurrent caller may have
-  // filled it while we were queued.
-  const afterWait = cache.get(jobKey);
-  if (afterWait) return afterWait;
 
   const url = `${location.origin}/viewjob?jk=${encodeURIComponent(jobKey)}&viewtype=embedded`;
   let response: Response;
@@ -255,7 +251,7 @@ export async function fetchJobDescription(jobKey: string): Promise<DescriptionRe
   const organicApplyStarts = parseOrganicApplyStarts(html);
   const mustHaveSkills = parseMustHaveSkills(html);
 
-  const result: DescriptionResult = {
+  return {
     ok: true,
     fullText,
     postedAge: insights.age,
@@ -265,6 +261,24 @@ export async function fetchJobDescription(jobKey: string): Promise<DescriptionRe
     mustHaveSkills,
     employerResponsive: insights.employerResponsive,
   };
-  cache.set(jobKey, result);
-  return result;
+}
+
+export async function fetchJobDescription(jobKey: string): Promise<DescriptionResult> {
+  const cached = cache.get(jobKey);
+  if (cached) return cached;
+
+  const pending = inFlight.get(jobKey);
+  if (pending) return pending;
+
+  const promise = doFetchJobDescription(jobKey);
+  inFlight.set(jobKey, promise);
+  try {
+    const result = await promise;
+    // Transient errors are deliberately not cached - the next viewport
+    // intersection retries.
+    if (result.ok) cache.set(jobKey, result);
+    return result;
+  } finally {
+    inFlight.delete(jobKey);
+  }
 }

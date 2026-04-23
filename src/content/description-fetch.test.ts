@@ -30,6 +30,25 @@ describe("fetchJobDescription", () => {
     }
   });
 
+  it("de-dups concurrent callers for the same jobKey", async () => {
+    let resolve: (r: Response) => void = () => {};
+    const response = new Promise<Response>((r) => {
+      resolve = r;
+    });
+    (g.fetch as ReturnType<typeof vi.fn>).mockReturnValue(response);
+    const p1 = fetchJobDescription("dedup1");
+    const p2 = fetchJobDescription("dedup1");
+    resolve(
+      new Response(`<div class="jobsearch-JobComponent-description">shared body</div>`, {
+        headers: { "Content-Type": "text/html" },
+      }),
+    );
+    const [r1, r2] = await Promise.all([p1, p2]);
+    expect(r1.ok).toBe(true);
+    expect(r2.ok).toBe(true);
+    expect(g.fetch).toHaveBeenCalledTimes(1);
+  });
+
   it("caches results by jobKey", async () => {
     (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
       new Response(`<div class="jobsearch-JobComponent-description">body</div>`, {
