@@ -68,7 +68,7 @@ export function match(fullText: string, structuredLocation: string, config: Conf
   }
 
   const workMode = detectWorkMode(structuredLocation);
-  const cityPillLabel = makeCityPillLabel(cityHit, fullText, config);
+  const cityPillLabel = makeCityPillLabel(cityHit, lower, config);
   const workModePillLabel = makeWorkModePillLabel(workMode);
   // When the user has configured keywords, they are the primary relevance signal:
   // any card with zero keyword hits is zero-match regardless of city/workMode. When
@@ -90,14 +90,13 @@ export function match(fullText: string, structuredLocation: string, config: Conf
   };
 }
 
-function makeCityPillLabel(cityHit: CityHit, fullText: string, config: Config): string | null {
+function makeCityPillLabel(cityHit: CityHit, lower: string, config: Config): string | null {
   switch (cityHit) {
     case "home":
       return "📍 Home city match";
     case "home-mentioned":
       return `📍 ${config.homeCity.split(",")[0]?.trim() ?? ""} mentioned`;
     case "nearby": {
-      const lower = fullText.toLowerCase();
       const hit = config.nearbyCities.find((c) => {
         const norm = normalizeCityName(c);
         return norm && new RegExp(`\\b${escapeRegex(norm)}\\b`, "i").test(lower);
