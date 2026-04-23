@@ -63,7 +63,12 @@ async function handleComputeDistance(msg: ContentToBackground): Promise<ComputeD
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   const msg = message as ContentToBackground;
   if (msg.type === "computeDistance") {
-    handleComputeDistance(msg).then(sendResponse);
+    // Both resolution paths must call sendResponse: a missed call leaves the
+    // content script awaiting sendMessage until MV3 times it out, blocking the
+    // card's IntersectionObserver for seconds.
+    handleComputeDistance(msg).then(sendResponse, (e: unknown) => {
+      sendResponse({ ok: false, errorKind: "unknown", message: String(e) });
+    });
     return true;
   }
   return false;
