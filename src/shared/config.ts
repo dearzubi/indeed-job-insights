@@ -33,8 +33,16 @@ export async function loadConfig(): Promise<Config> {
   return { ...DEFAULT_CONFIG, ...raw };
 }
 
-export async function saveConfig(partial: Partial<Config>): Promise<void> {
-  const current = await loadConfig();
-  const next: Config = { ...current, ...partial };
-  await chrome.storage.local.set({ [STORAGE_KEY]: next });
+// Serialize read-modify-write cycles so near-simultaneous partial writes
+// (e.g. two popup toggles clicked within a tick) can't clobber each other.
+let saveQueue: Promise<unknown> = Promise.resolve();
+
+export function saveConfig(partial: Partial<Config>): Promise<void> {
+  const next = saveQueue.then(async () => {
+    const current = await loadConfig();
+    const merged: Config = { ...current, ...partial };
+    await chrome.storage.local.set({ [STORAGE_KEY]: merged });
+  });
+  saveQueue = next.catch(() => undefined);
+  return next;
 }
