@@ -24,12 +24,12 @@ export interface MatchResult {
 function classifyLocation(normText: string, structuredLocation: string, config: Config): CityHit {
   const cleanedStructured = sanitizeLocation(structuredLocation);
   const normStructured = normalizeCityName(cleanedStructured);
-  const normHome = normalizeCityName(config.homeCity);
-  if (normHome && normStructured === normHome) return "home";
+  const normMyAddress = normalizeCityName(config.myAddress);
+  if (normMyAddress && normStructured === normMyAddress) return "home";
   // `normText` is already normalised the same way city names are (punctuation
   // stripped), so an exact whole-word regex reliably matches needles like
   // "St. John's" even when the body still uses punctuation.
-  if (normHome && new RegExp(`\\b${escapeRegex(normHome)}\\b`, "i").test(normText)) {
+  if (normMyAddress && new RegExp(`\\b${escapeRegex(normMyAddress)}\\b`, "i").test(normText)) {
     return "home-mentioned";
   }
   for (const nearby of config.nearbyCities) {
@@ -98,7 +98,7 @@ function makeCityPillLabel(cityHit: CityHit, lower: string, config: Config): str
     case "home":
       return "📍 Home city match";
     case "home-mentioned":
-      return `📍 ${config.homeCity.split(",")[0]?.trim() ?? ""} mentioned`;
+      return `📍 ${config.myAddress.split(",")[0]?.trim() ?? ""} mentioned`;
     case "nearby": {
       const hit = config.nearbyCities.find((c) => {
         const norm = normalizeCityName(c);

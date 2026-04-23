@@ -1,5 +1,5 @@
 import { fetchWithRetry } from "../shared/fetch-with-retry.ts";
-import type { ComputeDistanceResponse, DistanceDestination } from "../shared/messages.ts";
+import type { ComputeDistanceResponse, DistanceDestination } from "../shared/types.ts";
 
 interface Params {
   from: string;

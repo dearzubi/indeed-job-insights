@@ -1,10 +1,10 @@
-import { loadConfig } from "../shared/config.ts";
+import { configStore } from "../shared/config.ts";
 import { startScanning } from "./card-scanner.ts";
 import { startDetailPaneHighlighter } from "./detail-pane.ts";
 import { SELECTORS } from "./selectors.ts";
 
 async function boot(): Promise<void> {
-  const config = await loadConfig();
+  const config = await configStore.load();
   if (!config.enabled) return;
   waitForResults(() => startScanning(config));
   startDetailPaneHighlighter(config);

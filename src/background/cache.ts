@@ -1,12 +1,9 @@
+import type { StorageLike } from "../shared/types.ts";
+
 export interface DistanceCacheEntry {
   meters: number;
   minutes: number;
   fetchedAt: number;
-}
-
-interface StorageLike {
-  get(key: string): Promise<{ [k: string]: unknown }>;
-  set(obj: Record<string, unknown>): Promise<void>;
 }
 
 export interface CacheOptions {
@@ -31,10 +28,8 @@ export class DistanceCache {
     };
   }
 
-  private enqueue<T>(fn: () => Promise<T>): Promise<T> {
-    const next = this.#queue.then(fn, fn);
-    this.#queue = next.catch(() => undefined);
-    return next;
+  get count(): Promise<number> {
+    return this.loadAll().then((all) => Object.keys(all).length);
   }
 
   get(key: string): Promise<DistanceCacheEntry | null> {
@@ -66,6 +61,16 @@ export class DistanceCache {
     });
   }
 
+  clear(): Promise<void> {
+    return this.#storage.remove(this.#opts.cacheKey);
+  }
+
+  private enqueue<T>(fn: () => Promise<T>): Promise<T> {
+    const next = this.#queue.then(fn, fn);
+    this.#queue = next.catch(() => undefined);
+    return next;
+  }
+
   private async loadAll(): Promise<Record<string, DistanceCacheEntry>> {
     const got = await this.#storage.get(this.#opts.cacheKey);
     const raw = got[this.#opts.cacheKey];
@@ -76,3 +81,19 @@ export class DistanceCache {
     await this.#storage.set({ [this.#opts.cacheKey]: data });
   }
 }
+
+const CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 Days
+const CACHE_MAX_ENTRIES = 500;
+
+export const distanceCache = new DistanceCache(
+  {
+    get: (key) => chrome.storage.local.get(key),
+    set: (obj) => chrome.storage.local.set(obj),
+    remove: (key) => chrome.storage.local.remove(key),
+  },
+  {
+    ttlMs: CACHE_TTL_MS,
+    maxEntries: CACHE_MAX_ENTRIES,
+    cacheKey: DEFAULT_DISTANCE_CACHE_STORAGE_KEY,
+  },
+);

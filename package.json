@@ -16,6 +16,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "biome check . && tsc --noEmit",
+    "lint:fix": "biome check --write ./src",
     "format": "biome check --write .",
     "prepare": "lefthook install"
   },

@@ -1,13 +1,13 @@
 import type { Config } from "../shared/config.ts";
 import { sanitizeLocation } from "../shared/location.ts";
-import type { ComputeDistanceResponse, DistanceDestination } from "../shared/messages.ts";
+import type { ComputeDistanceResponse, DistanceDestination } from "../shared/types.ts";
 import { fetchJobDescription, type JobLocation } from "./description-fetch.ts";
 import { inject } from "./injector.ts";
 import { match } from "./matcher.ts";
 import { extractJobKey, SELECTORS } from "./selectors.ts";
 
-// Priority: postcode → lat/long → fullAddress → card text.
-// Postcode is composed with countryCode so Google disambiguates codes that
+// Priority Order: postcode > lat/long > fullAddress > card text.
+// Postcode is composed with countryCode so Google disambiguate codes that
 // exist in multiple countries (e.g. "SW1A 1AA" vs "80000").
 export function pickDestination(
   jobLocation: JobLocation | null,
@@ -63,7 +63,7 @@ async function processCard(card: HTMLElement, config: Config): Promise<void> {
     card.querySelector<HTMLElement>(SELECTORS.locationText)?.textContent?.trim() ?? "";
 
   const desc = await fetchJobDescription(jobKey);
-  // Fall back to the card's visible snippet when the viewjob fetch fails
+  // Fall back to the card's visible snippet when the /viewjob fetch fails
   // (typically Cloudflare 403 after a burst). Better to decorate with a
   // partial signal than to leave the card blank.
   const fullText = desc.ok
@@ -79,18 +79,18 @@ async function processCard(card: HTMLElement, config: Config): Promise<void> {
   let distanceMinutes: number | null = null;
   let distanceError: string | null = null;
 
-  // Driving time is an optional feature: skip the Google Maps call entirely
-  // when the user hasn't provided an address or API key. The card still gets
-  // all other decorations (pills, keyword highlights, dim logic).
-  const canComputeDistance = config.homeCity.trim() !== "" && config.googleMapsApiKey.trim() !== "";
+  const canComputeDistance =
+    config.myAddress.trim() !== "" && config.googleMapsApiKey.trim() !== "";
+
   const destination = canComputeDistance
     ? pickDestination(desc.ok ? desc.location : null, structuredLocation)
     : null;
+
   if (destination) {
     try {
       const response = (await chrome.runtime.sendMessage({
         type: "computeDistance",
-        from: config.homeCity,
+        from: config.myAddress,
         to: destination,
         apiKey: config.googleMapsApiKey,
       })) as ComputeDistanceResponse;
@@ -98,9 +98,8 @@ async function processCard(card: HTMLElement, config: Config): Promise<void> {
         distanceMinutes = response.minutes;
       } else if (response.errorKind !== "no-route") {
         // Swallow no-route errors (generic destinations like "Remote" or just
-        // "United Kingdom" that Google can't route to). Showing a red ⚠ for
-        // these is noise - the user can't fix them. Real errors like bad key /
-        // quota / network still surface.
+        // "United Kingdom" that Google can't route to). Showing ane error is irrelevant as
+        // user can't fix them. Real errors like bad key / quota / network still surface.
         distanceError = response.message;
       }
     } catch (e) {

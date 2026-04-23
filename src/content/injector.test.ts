@@ -188,7 +188,7 @@ describe("inject / remove", () => {
     expect(pill?.textContent).toBe("🏢 Hybrid");
   });
 
-  it("formats distance < 60 minutes as 'Nm'", () => {
+  it("formats distance < 60 minutes as 'Xm'", () => {
     const card = makeCard();
     const result: MatchResult = {
       cityHit: "none",
@@ -236,7 +236,7 @@ describe("inject / remove", () => {
     expect(card.querySelector(".ext-distance")?.textContent).toBe("🚗 1h");
   });
 
-  it("formats 90 minutes as '1h 30m'", () => {
+  it("formats minutes > 60 as Xh Ym", () => {
     const card = makeCard();
     const result: MatchResult = {
       cityHit: "none",

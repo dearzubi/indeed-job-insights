@@ -1,3 +1,5 @@
+import { fetchWithRetry } from "../shared/fetch-with-retry.ts";
+
 export interface JobLocation {
   postalCode: string | null;
   latitude: number | null;
@@ -26,12 +28,18 @@ export type DescriptionResult =
     }
   | { ok: false; error: string };
 
+interface HiringInsights {
+  age: string | null;
+  postedToday: boolean;
+  employerResponsive: EmployerResponsive | null;
+}
+
 const cache = new Map<string, DescriptionResult>();
 // De-dup concurrent callers so N simultaneous observers for the same jobKey
 // share a single network fetch instead of each burning a throttle slot.
 const inFlight = new Map<string, Promise<DescriptionResult>>();
 
-// Serialize /viewjob fetches with a minimum interval so a burst of card-view
+// Serialise /viewjob fetches with a minimum interval so a burst of card-view
 // events doesn't trip Indeed's Cloudflare bot protection (which returns 403 and
 // poisons the session for subsequent fetches).
 const MIN_INTERVAL_MS = 1000;
@@ -94,12 +102,6 @@ function extractJsonObject(html: string, afterIdx: number, maxLen = 16_000): str
 
 function extractJsonArray(html: string, afterIdx: number, maxLen = 200_000): string | null {
   return extractBalanced(html, afterIdx, "[", "]", maxLen);
-}
-
-interface HiringInsights {
-  age: string | null;
-  postedToday: boolean;
-  employerResponsive: EmployerResponsive | null;
 }
 
 function parseEmployerResponsive(raw: unknown): EmployerResponsive | null {
@@ -177,7 +179,6 @@ function parseMustHaveSkills(html: string): string[] {
       const label = entry.attribute?.label;
       if (typeof label === "string" && label.trim()) labels.push(label);
     }
-    // Deduplicate while preserving order.
     return [...new Set(labels)];
   } catch {
     return [];
@@ -201,12 +202,6 @@ function parseJobLocationJson(json: string): JobLocation {
   };
 }
 
-// The /viewjob payload embeds the job's structured location as a JSON blob
-// keyed `"location":{ ... "__typename":"JobLocation" ... }`. There can be other
-// unrelated `"location":{` keys in the HTML, so we scan forward until we hit one
-// whose object references `JobLocation` AND parses cleanly. A failure on an
-// earlier key (e.g. hits the maxLen cap inside a minified script) must not
-// prevent us from finding a real later block.
 function parseJobLocation(html: string): JobLocation | null {
   let cursor = 0;
   while (cursor < html.length) {
@@ -231,10 +226,8 @@ async function doFetchJobDescription(jobKey: string): Promise<DescriptionResult>
   const url = `${location.origin}/viewjob?jk=${encodeURIComponent(jobKey)}&viewtype=embedded`;
   let response: Response;
   try {
-    response = await fetch(url, { credentials: "include" });
+    response = await fetchWithRetry(url, { credentials: "include" });
   } catch (e) {
-    // Don't cache transient errors - let the next viewport intersection retry
-    // once throttling/Cloudflare has recovered.
     return { ok: false, error: `fetch: ${String(e)}` };
   }
   if (!response.ok) {
@@ -274,8 +267,6 @@ export async function fetchJobDescription(jobKey: string): Promise<DescriptionRe
   inFlight.set(jobKey, promise);
   try {
     const result = await promise;
-    // Transient errors are deliberately not cached - the next viewport
-    // intersection retries.
     if (result.ok) cache.set(jobKey, result);
     return result;
   } finally {

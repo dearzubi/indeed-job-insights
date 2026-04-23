@@ -17,7 +17,7 @@ describe("pickDestination", () => {
     ).toEqual({ address: "GU21 6XB, GB" });
   });
 
-  it("falls back to latlng when postcode is null", () => {
+  it("falls back to lat lng when postcode is null", () => {
     expect(
       pickDestination(
         {
@@ -32,7 +32,7 @@ describe("pickDestination", () => {
     ).toEqual({ lat: 51.31903, lng: -0.55893 });
   });
 
-  it("falls back to fullAddress when postcode + latlng are null", () => {
+  it("falls back to fullAddress when postcode + lat lng are null", () => {
     expect(
       pickDestination(
         {

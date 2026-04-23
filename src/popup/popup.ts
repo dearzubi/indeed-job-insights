@@ -1,10 +1,11 @@
-import { loadConfig, saveConfig } from "../shared/config.ts";
+import { configStore } from "../shared/config.ts";
+import { $ } from "../shared/dom.ts";
 
-const enabled = document.getElementById("enabled") as HTMLInputElement;
-const dim = document.getElementById("dim") as HTMLInputElement;
-const dimNeg = document.getElementById("dimNegative") as HTMLInputElement;
-const openOptions = document.getElementById("openOptions") as HTMLAnchorElement;
-const status = document.getElementById("status") as HTMLSpanElement;
+const enabled = $<HTMLInputElement>("enabled");
+const dim = $<HTMLInputElement>("dim");
+const dimNeg = $<HTMLInputElement>("dimNegative");
+const openOptions = $<HTMLAnchorElement>("openOptions");
+const status = $<HTMLSpanElement>("status");
 
 function setStatus(text: string, isError: boolean): void {
   status.textContent = text;
@@ -12,7 +13,7 @@ function setStatus(text: string, isError: boolean): void {
 }
 
 async function hydrate(): Promise<void> {
-  const cfg = await loadConfig();
+  const cfg = await configStore.load();
   enabled.checked = cfg.enabled;
   dim.checked = cfg.dimZeroMatch;
   dimNeg.checked = cfg.dimNegativeMatch;
@@ -21,8 +22,7 @@ async function hydrate(): Promise<void> {
 enabled.addEventListener("change", async () => {
   setStatus("", false);
   try {
-    await saveConfig({ enabled: enabled.checked });
-    // Reload the active tab so the content script re-boots with the new setting.
+    await configStore.save({ enabled: enabled.checked });
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (tab?.id !== undefined) await chrome.tabs.reload(tab.id);
   } catch (e) {
@@ -34,7 +34,7 @@ enabled.addEventListener("change", async () => {
 dim.addEventListener("change", async () => {
   setStatus("", false);
   try {
-    await saveConfig({ dimZeroMatch: dim.checked });
+    await configStore.save({ dimZeroMatch: dim.checked });
   } catch (e) {
     dim.checked = !dim.checked;
     setStatus(`Save failed: ${String(e)}`, true);
@@ -44,7 +44,7 @@ dim.addEventListener("change", async () => {
 dimNeg.addEventListener("change", async () => {
   setStatus("", false);
   try {
-    await saveConfig({ dimNegativeMatch: dimNeg.checked });
+    await configStore.save({ dimNegativeMatch: dimNeg.checked });
   } catch (e) {
     dimNeg.checked = !dimNeg.checked;
     setStatus(`Save failed: ${String(e)}`, true);
@@ -53,7 +53,7 @@ dimNeg.addEventListener("change", async () => {
 
 openOptions.addEventListener("click", (e) => {
   e.preventDefault();
-  chrome.runtime.openOptionsPage();
+  void chrome.runtime.openOptionsPage();
 });
 
 void hydrate();

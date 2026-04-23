@@ -33,3 +33,9 @@ export type ComputeDistanceResponse = ComputeDistanceSuccess | ComputeDistanceEr
 export type ContentToBackground = ComputeDistanceRequest;
 
 export type BackgroundResponse = ComputeDistanceResponse;
+
+export interface StorageLike {
+  get(key: string): Promise<{ [k: string]: unknown }>;
+  set(obj: Record<string, unknown>): Promise<void>;
+  remove(key: string): Promise<void>;
+}

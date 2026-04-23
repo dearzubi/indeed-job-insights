@@ -90,7 +90,6 @@ function removeInsights(host: HTMLElement): void {
 
 async function renderInsights(host: HTMLElement, jobKey: string): Promise<void> {
   const desc = await fetchJobDescription(jobKey);
-  // Another render may have raced past us - bail if the pane has since moved on.
   if (getActiveJobKey() !== jobKey) return;
   const parent = host.parentElement;
   if (!parent) return;
@@ -163,9 +162,6 @@ export function startDetailPaneHighlighter(config: Config): () => void {
 
   pickAndApply();
 
-  // Debounce via rAF: the observer on document.body fires for every Indeed
-  // mutation (hovers, lazy images, tooltips), and our own insights insertion
-  // would otherwise retrigger it synchronously in a loop.
   let scheduled = false;
   const mo = new MutationObserver(() => {
     if (scheduled) return;

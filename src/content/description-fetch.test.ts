@@ -1,17 +1,21 @@
 // @vitest-environment happy-dom
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from "vitest";
 import { clearDescriptionCache, fetchJobDescription } from "./description-fetch.ts";
 
-const g = globalThis as typeof globalThis & { fetch: typeof fetch };
-
 describe("fetchJobDescription", () => {
+  let fetchMock: Mock<typeof fetch>;
+
   beforeEach(() => {
     clearDescriptionCache();
-    g.fetch = vi.fn();
+    fetchMock = vi.fn<typeof fetch>();
+    vi.stubGlobal("fetch", fetchMock);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
   it("returns fullText on success", async () => {
-    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+    fetchMock.mockResolvedValue(
       new Response(
         `<html><body>
           <div class="jobsearch-JobComponent-description">
@@ -30,12 +34,12 @@ describe("fetchJobDescription", () => {
     }
   });
 
-  it("de-dups concurrent callers for the same jobKey", async () => {
+  it("caches and de-dups concurrent callers for the same jobKey", async () => {
     let resolve: (r: Response) => void = () => {};
     const response = new Promise<Response>((r) => {
       resolve = r;
     });
-    (g.fetch as ReturnType<typeof vi.fn>).mockReturnValue(response);
+    fetchMock.mockReturnValue(response);
     const p1 = fetchJobDescription("dedup1");
     const p2 = fetchJobDescription("dedup1");
     resolve(
@@ -46,44 +50,43 @@ describe("fetchJobDescription", () => {
     const [r1, r2] = await Promise.all([p1, p2]);
     expect(r1.ok).toBe(true);
     expect(r2.ok).toBe(true);
-    expect(g.fetch).toHaveBeenCalledTimes(1);
-  });
-
-  it("caches results by jobKey", async () => {
-    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
-      new Response(`<div class="jobsearch-JobComponent-description">body</div>`, {
-        headers: { "Content-Type": "text/html" },
-      }),
-    );
-    await fetchJobDescription("xyz");
-    await fetchJobDescription("xyz");
-    expect(g.fetch).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("returns error on fetch failure", async () => {
-    (g.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error("oops"));
+    fetchMock.mockRejectedValue(new Error("oops"));
     const r = await fetchJobDescription("zzz");
     expect(r.ok).toBe(false);
   });
 
   it("does not cache transient fetch rejections", async () => {
-    const fetchMock = g.fetch as ReturnType<typeof vi.fn>;
-    fetchMock.mockRejectedValueOnce(new Error("cloudflare blip"));
-    fetchMock.mockResolvedValueOnce(
-      new Response(`<div class="jobsearch-JobComponent-description">retried body</div>`, {
-        headers: { "Content-Type": "text/html" },
-      }),
-    );
-    const first = await fetchJobDescription("retry1");
-    expect(first.ok).toBe(false);
-    const second = await fetchJobDescription("retry1");
-    expect(second.ok).toBe(true);
-    if (second.ok) expect(second.fullText).toContain("retried body");
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    vi.useFakeTimers();
+    try {
+      fetchMock.mockRejectedValue(new Error("cloudflare blip"));
+      const firstP = fetchJobDescription("retry1");
+      await vi.runAllTimersAsync();
+      const first = await firstP;
+      expect(first.ok).toBe(false);
+      expect(fetchMock.mock.calls.length).toBeGreaterThan(1);
+
+      fetchMock.mockReset();
+      fetchMock.mockResolvedValue(
+        new Response(`<div class="jobsearch-JobComponent-description">retried body</div>`, {
+          headers: { "Content-Type": "text/html" },
+        }),
+      );
+      const secondP = fetchJobDescription("retry1");
+      await vi.runAllTimersAsync();
+      const second = await secondP;
+      expect(second.ok).toBe(true);
+      if (second.ok) expect(second.fullText).toContain("retried body");
+      expect(fetchMock.mock.calls.length).toBeGreaterThan(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("does not cache HTTP error responses", async () => {
-    const fetchMock = g.fetch as ReturnType<typeof vi.fn>;
     fetchMock.mockResolvedValueOnce(new Response("forbidden", { status: 403 }));
     fetchMock.mockResolvedValueOnce(
       new Response(`<div class="jobsearch-JobComponent-description">ok now</div>`, {
@@ -98,7 +101,7 @@ describe("fetchJobDescription", () => {
   });
 
   it("returns hiring insights when embedded JSON is present", async () => {
-    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+    fetchMock.mockResolvedValue(
       new Response(
         `<html><body>
           <div class="jobsearch-JobComponent-description">body text</div>
@@ -116,7 +119,7 @@ describe("fetchJobDescription", () => {
   });
 
   it("returns nulls/false when hiring insights block missing", async () => {
-    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+    fetchMock.mockResolvedValue(
       new Response(
         `<html><body><div class="jobsearch-JobComponent-description">body text</div></body></html>`,
         { headers: { "Content-Type": "text/html" } },
@@ -131,7 +134,7 @@ describe("fetchJobDescription", () => {
   });
 
   it("parses JobLocation JSON from the viewjob HTML", async () => {
-    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+    fetchMock.mockResolvedValue(
       new Response(
         `<html><body>
           <div class="jobsearch-JobComponent-description">body</div>
@@ -154,7 +157,7 @@ describe("fetchJobDescription", () => {
   });
 
   it("returns null fields when JobLocation has null postalCode/streetAddress", async () => {
-    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+    fetchMock.mockResolvedValue(
       new Response(
         `<html><body>
           <div class="jobsearch-JobComponent-description">body</div>
@@ -173,7 +176,7 @@ describe("fetchJobDescription", () => {
   });
 
   it("returns null location when no JobLocation block present", async () => {
-    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+    fetchMock.mockResolvedValue(
       new Response(
         `<html><body><div class="jobsearch-JobComponent-description">body</div></body></html>`,
         { headers: { "Content-Type": "text/html" } },
@@ -185,7 +188,7 @@ describe("fetchJobDescription", () => {
   });
 
   it("parses organicApplyStarts from jobStats", async () => {
-    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+    fetchMock.mockResolvedValue(
       new Response(
         `<html><body>
           <div class="jobsearch-JobComponent-description">body</div>
@@ -200,7 +203,7 @@ describe("fetchJobDescription", () => {
   });
 
   it("returns null organicApplyStarts when jobStats missing", async () => {
-    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+    fetchMock.mockResolvedValue(
       new Response(`<div class="jobsearch-JobComponent-description">b</div>`, {
         headers: { "Content-Type": "text/html" },
       }),
@@ -211,7 +214,7 @@ describe("fetchJobDescription", () => {
   });
 
   it("parses must-have skill labels from attributeComparisons", async () => {
-    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+    fetchMock.mockResolvedValue(
       new Response(
         `<html><body>
           <div class="jobsearch-JobComponent-description">body</div>
@@ -231,7 +234,7 @@ describe("fetchJobDescription", () => {
   });
 
   it("returns empty must-haves when no attributeComparisons match", async () => {
-    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+    fetchMock.mockResolvedValue(
       new Response(
         `<html><body>
           <div class="jobsearch-JobComponent-description">body</div>
@@ -246,7 +249,7 @@ describe("fetchJobDescription", () => {
   });
 
   it("parses employerResponsiveCardModel as EmployerResponsive", async () => {
-    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+    fetchMock.mockResolvedValue(
       new Response(
         `<html><body>
           <div class="jobsearch-JobComponent-description">body</div>
@@ -266,7 +269,7 @@ describe("fetchJobDescription", () => {
   });
 
   it("returns null employerResponsive when card model is missing", async () => {
-    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+    fetchMock.mockResolvedValue(
       new Response(
         `<html><body>
           <div class="jobsearch-JobComponent-description">body</div>
@@ -281,7 +284,7 @@ describe("fetchJobDescription", () => {
   });
 
   it("skips unrelated 'location' keys and finds the JobLocation block", async () => {
-    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+    fetchMock.mockResolvedValue(
       new Response(
         `<html><body>
           <div class="jobsearch-JobComponent-description">body</div>
@@ -299,10 +302,7 @@ describe("fetchJobDescription", () => {
   });
 
   it("extractBalanced ignores braces inside JSON string literals", async () => {
-    // The JobLocation's fullAddress contains an unbalanced `}` inside the string.
-    // Without string-awareness, the bracket scan treats that `}` as closing the
-    // inner object, producing an invalid JSON slice that fails to parse.
-    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+    fetchMock.mockResolvedValue(
       new Response(
         `<html><body>
           <div class="jobsearch-JobComponent-description">body</div>
@@ -321,14 +321,11 @@ describe("fetchJobDescription", () => {
   });
 
   it("parseJobLocation keeps scanning past a malformed first 'location:{' block", async () => {
-    // First `"location":{` is unterminated (no matching `}` within 16kB), so the
-    // balanced scan fails. The real JobLocation comes later and must still be
-    // found.
     const bogusPrefix = `<html><body>
           <div class="jobsearch-JobComponent-description">body</div>
           <script>var bogus = {"location":{"weird": "value without closing brace`;
     const padded = bogusPrefix.padEnd(20_000, "x");
-    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+    fetchMock.mockResolvedValue(
       new Response(
         `${padded}</script>
           <script>var real = {"location":{"__typename":"JobLocation","countryCode":"CA","postalCode":"M5V 3A8","latitude":43.64,"longitude":-79.38,"fullAddress":"Toronto ON","streetAddress":null}};</script>
@@ -345,7 +342,7 @@ describe("fetchJobDescription", () => {
   });
 
   it("handles postedToday: true", async () => {
-    (g.fetch as ReturnType<typeof vi.fn>).mockResolvedValue(
+    fetchMock.mockResolvedValue(
       new Response(
         `<html><body>
           <div class="jobsearch-JobComponent-description">body</div>

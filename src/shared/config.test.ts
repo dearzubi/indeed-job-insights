@@ -1,70 +1,57 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { DEFAULT_CONFIG, loadConfig, saveConfig } from "./config.ts";
+import { beforeEach, describe, expect, it } from "vitest";
+import { type MockStorage, makeMockStorage } from "../../test/helper.ts";
+import { ConfigStore, DEFAULT_CONFIG, DEFAULT_CONFIG_STORAGE_KEY } from "./config.ts";
 
-const STORAGE_KEY = "config";
-
-function installChromeStorageMock(): Record<string, unknown> {
-  const store: Record<string, unknown> = {};
-  const chromeShim = {
-    storage: {
-      local: {
-        get: vi.fn(async (key: string) => {
-          await Promise.resolve();
-          return { [key]: store[key] };
-        }),
-        set: vi.fn(async (obj: Record<string, unknown>) => {
-          await Promise.resolve();
-          Object.assign(store, obj);
-        }),
-      },
-    },
-  };
-  (globalThis as unknown as { chrome: typeof chromeShim }).chrome = chromeShim;
-  return store;
-}
-
-describe("saveConfig", () => {
+describe("ConfigStore", () => {
+  let storage: MockStorage;
   beforeEach(() => {
-    installChromeStorageMock();
+    storage = makeMockStorage();
   });
 
-  it("merges overlapping writes without losing fields", async () => {
-    await saveConfig({ ...DEFAULT_CONFIG });
-    await Promise.all([
-      saveConfig({ dimZeroMatch: false }),
-      saveConfig({ dimNegativeMatch: false }),
-    ]);
-    const cfg = await loadConfig();
-    expect(cfg.dimZeroMatch).toBe(false);
-    expect(cfg.dimNegativeMatch).toBe(false);
+  describe("save", () => {
+    it("merges overlapping writes without losing fields", async () => {
+      const store = new ConfigStore(storage);
+      await store.save({ ...DEFAULT_CONFIG });
+      await Promise.all([
+        store.save({ dimZeroMatch: false }),
+        store.save({ dimNegativeMatch: false }),
+      ]);
+      const cfg = await store.load();
+      expect(cfg.dimZeroMatch).toBe(false);
+      expect(cfg.dimNegativeMatch).toBe(false);
+    });
+
+    it("preserves unrelated fields on partial update", async () => {
+      const store = new ConfigStore(storage);
+      await store.save({ ...DEFAULT_CONFIG, myAddress: "Toronto", enabled: true });
+      await store.save({ dimZeroMatch: false });
+      const cfg = await store.load();
+      expect(cfg.myAddress).toBe("Toronto");
+      expect(cfg.enabled).toBe(true);
+      expect(cfg.dimZeroMatch).toBe(false);
+    });
   });
 
-  it("preserves unrelated fields on partial update", async () => {
-    await saveConfig({ ...DEFAULT_CONFIG, homeCity: "Toronto", enabled: true });
-    await saveConfig({ dimZeroMatch: false });
-    const cfg = await loadConfig();
-    expect(cfg.homeCity).toBe("Toronto");
-    expect(cfg.enabled).toBe(true);
-    expect(cfg.dimZeroMatch).toBe(false);
-  });
-});
+  describe("load", () => {
+    it("returns DEFAULT_CONFIG when storage empty", async () => {
+      const store = new ConfigStore(storage);
+      expect(await store.load()).toEqual(DEFAULT_CONFIG);
+    });
 
-describe("loadConfig", () => {
-  beforeEach(() => {
-    installChromeStorageMock();
-  });
+    it("fills missing fields from DEFAULT_CONFIG on partial stored value", async () => {
+      storage.backing[DEFAULT_CONFIG_STORAGE_KEY] = { version: 1, myAddress: "Mississauga" };
+      const store = new ConfigStore(storage);
+      const cfg = await store.load();
+      expect(cfg.myAddress).toBe("Mississauga");
+      expect(cfg.enabled).toBe(DEFAULT_CONFIG.enabled);
+      expect(cfg.keywords).toEqual([]);
+    });
 
-  it("returns DEFAULT_CONFIG when storage empty", async () => {
-    const cfg = await loadConfig();
-    expect(cfg).toEqual(DEFAULT_CONFIG);
-  });
-
-  it("fills missing fields from DEFAULT_CONFIG on partial stored value", async () => {
-    const store = installChromeStorageMock();
-    store[STORAGE_KEY] = { version: 1, homeCity: "Mississauga" };
-    const cfg = await loadConfig();
-    expect(cfg.homeCity).toBe("Mississauga");
-    expect(cfg.enabled).toBe(DEFAULT_CONFIG.enabled);
-    expect(cfg.keywords).toEqual([]);
+    it("honors a custom storageKey", async () => {
+      storage.backing["custom-key"] = { version: 1, myAddress: "Ottawa" };
+      const store = new ConfigStore(storage, { storageKey: "custom-key" });
+      const cfg = await store.load();
+      expect(cfg.myAddress).toBe("Ottawa");
+    });
   });
 });

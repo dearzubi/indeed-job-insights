@@ -97,7 +97,7 @@ describe("startDetailPaneHighlighter", () => {
       keywords: ["python"],
     });
     teardown();
-    // Add more content after teardown - it should NOT be highlighted.
+
     const added = document.createElement("div");
     added.id = "jobDescriptionText";
     added.textContent = "React";

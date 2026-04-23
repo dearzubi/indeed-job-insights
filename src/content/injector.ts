@@ -14,17 +14,8 @@ export interface InjectContext {
   organicApplyStarts: number | null;
 }
 
-function formatPostedLabel(ctx: InjectContext): string | null {
-  if (ctx.postedToday) return "🕒 Posted today";
-  if (ctx.postedAge?.trim()) return `🕒 ${ctx.postedAge.trim()}`;
-  return null;
-}
-
 const injected = new WeakMap<HTMLElement, HTMLElement[]>();
 
-// Native `title` tooltips stay visible for ~5s with no way to shorten them.
-// We render our own bubble that auto-hides after AUTO_HIDE_MS so long error
-// messages don't linger.
 const AUTO_HIDE_MS = 2500;
 
 function attachAutoHideTooltip(host: HTMLElement, text: string): void {
@@ -53,6 +44,12 @@ function attachAutoHideTooltip(host: HTMLElement, text: string): void {
   host.addEventListener("mouseleave", hide);
 }
 
+function formatPostedLabel(ctx: InjectContext): string | null {
+  if (ctx.postedToday) return "🕒 Posted today";
+  if (ctx.postedAge?.trim()) return `🕒 ${ctx.postedAge.trim()}`;
+  return null;
+}
+
 function formatMinutes(total: number): string {
   if (total < 60) return `${total}m`;
   const h = Math.floor(total / 60);
@@ -75,13 +72,11 @@ export function inject(card: HTMLElement, result: MatchResult, ctx: InjectContex
   const pillsRow = document.createElement("div");
   pillsRow.className = "ext-pills";
 
-  // Work-mode pill - always present
   const workPill = document.createElement("span");
   workPill.className = `ext-pill ext-pill-${result.workMode}`;
   workPill.textContent = result.workModePillLabel;
   pillsRow.appendChild(workPill);
 
-  // City-match pill - only when there's a match
   if (result.cityPillLabel) {
     const cityPill = document.createElement("span");
     cityPill.className = "ext-pill ext-pill-city";
@@ -89,7 +84,6 @@ export function inject(card: HTMLElement, result: MatchResult, ctx: InjectContex
     pillsRow.appendChild(cityPill);
   }
 
-  // Keyword count pill
   if (result.keywordHits.length > 0) {
     const kwPill = document.createElement("span");
     kwPill.className = "ext-pill ext-pill-keywords";
@@ -123,9 +117,6 @@ export function inject(card: HTMLElement, result: MatchResult, ctx: InjectContex
 
   footer.appendChild(pillsRow);
 
-  // Distance badge: only render when we have data or an error to report. When
-  // the user hasn't configured an address + API key (or the extension simply
-  // couldn't pick a destination), omit the badge entirely.
   if (ctx.distanceError || ctx.distanceMinutes !== null) {
     const badge = document.createElement("span");
     if (ctx.distanceError) {
@@ -150,7 +141,6 @@ export function inject(card: HTMLElement, result: MatchResult, ctx: InjectContex
   footerHost.appendChild(footer);
   nodes.push(footer);
 
-  // Keyword highlights within the snippet
   const snippetEl = card.querySelector<HTMLElement>(SELECTORS.snippetText);
   if (snippetEl) {
     if (result.keywordHits.length > 0) {

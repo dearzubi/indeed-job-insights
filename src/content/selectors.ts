@@ -1,5 +1,3 @@
-export const LAYOUT_VERSION = 1;
-
 export const SELECTORS = {
   // Search results (/jobs) use `#mosaic-provider-jobcards` or `.jobsearch-ResultsList`.
   // Indeed homepage embeds a feed in `#mosaic-provider-jobcards-1` (numeric suffix)

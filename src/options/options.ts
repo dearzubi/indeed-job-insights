@@ -1,14 +1,10 @@
-import { loadConfig, saveConfig } from "../shared/config.ts";
+import { type DistanceCache, distanceCache } from "../background/cache.ts";
+import { configStore } from "../shared/config.ts";
+import { $ } from "../shared/dom.ts";
 import { normalizeCityName, normalizeKeyword } from "../shared/normalize.ts";
 
-const $ = <T extends HTMLElement>(id: string): T => {
-  const el = document.getElementById(id);
-  if (!el) throw new Error(`missing #${id}`);
-  return el as T;
-};
-
 const form = $<HTMLFormElement>("form");
-const homeCity = $<HTMLInputElement>("homeCity");
+const myAddress = $<HTMLInputElement>("myAddress");
 const nearbyCities = $<HTMLTextAreaElement>("nearbyCities");
 const keywords = $<HTMLTextAreaElement>("keywords");
 const excludedKeywords = $<HTMLTextAreaElement>("excludedKeywords");
@@ -19,23 +15,15 @@ const status = $<HTMLSpanElement>("status");
 const clearCacheBtn = $<HTMLButtonElement>("clearCache");
 const cacheStatus = $<HTMLSpanElement>("cacheStatus");
 
-const CACHE_STORAGE_KEY = "distanceCache";
-
-async function getCacheEntryCount(): Promise<number> {
-  const got = await chrome.storage.local.get(CACHE_STORAGE_KEY);
-  const raw = got[CACHE_STORAGE_KEY];
-  return raw && typeof raw === "object" ? Object.keys(raw).length : 0;
-}
-
-async function refreshCacheStatus(): Promise<void> {
-  const n = await getCacheEntryCount();
+async function refreshCacheStatus(cache: DistanceCache): Promise<void> {
+  const n = await cache.count;
   cacheStatus.textContent = `${n} cached location${n === 1 ? "" : "s"}.`;
   cacheStatus.classList.remove("error");
 }
 
 async function hydrate(): Promise<void> {
-  const cfg = await loadConfig();
-  homeCity.value = cfg.homeCity;
+  const cfg = await configStore.load();
+  myAddress.value = cfg.myAddress;
   nearbyCities.value = cfg.nearbyCities.join("\n");
   keywords.value = cfg.keywords.join("\n");
   excludedKeywords.value = cfg.excludedKeywords.join("\n");
@@ -56,12 +44,12 @@ form.addEventListener("submit", async (e) => {
   status.textContent = "";
   status.classList.remove("error");
 
-  const home = homeCity.value.trim();
+  const address = myAddress.value.trim();
   const key = apiKey.value.trim();
 
   try {
-    await saveConfig({
-      homeCity: home,
+    await configStore.save({
+      myAddress: address,
       nearbyCities: parseList(nearbyCities.value)
         .map((c) => normalizeCityName(c))
         .filter(Boolean),
@@ -84,7 +72,7 @@ form.addEventListener("submit", async (e) => {
 
 clearCacheBtn.addEventListener("click", async () => {
   try {
-    await chrome.storage.local.remove(CACHE_STORAGE_KEY);
+    await distanceCache.clear();
     cacheStatus.textContent = "Cache cleared.";
     cacheStatus.classList.remove("error");
   } catch (err) {
@@ -94,4 +82,4 @@ clearCacheBtn.addEventListener("click", async () => {
 });
 
 void hydrate();
-void refreshCacheStatus();
+void refreshCacheStatus(distanceCache);

@@ -1,20 +1,9 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
+import { type MockStorage, makeMockStorage } from "../../test/helper.ts";
 import { DistanceCache, type DistanceCacheEntry } from "./cache.ts";
 
-function makeMockStorage() {
-  const backing: Record<string, unknown> = {};
-  return {
-    backing,
-    get: vi.fn((key: string) => Promise.resolve({ [key]: backing[key] })),
-    set: vi.fn((obj: Record<string, unknown>) => {
-      Object.assign(backing, obj);
-      return Promise.resolve();
-    }),
-  };
-}
-
 describe("DistanceCache", () => {
-  let storage: ReturnType<typeof makeMockStorage>;
+  let storage: MockStorage;
   beforeEach(() => {
     storage = makeMockStorage();
   });
@@ -25,6 +14,15 @@ describe("DistanceCache", () => {
     await cache.set("a→b", entry);
     const got = await cache.get("a→b");
     expect(got).toEqual(entry);
+  });
+
+  it("returns entries count", async () => {
+    const cache = new DistanceCache(storage, { ttlMs: 10_000, maxEntries: 100 });
+    const entry: DistanceCacheEntry = { meters: 1000, minutes: 10, fetchedAt: Date.now() };
+    await cache.set("a→b", entry);
+    await cache.set("a→c", entry);
+    const got = await cache.count;
+    expect(got).toEqual(2);
   });
 
   it("returns null for missing keys", async () => {
@@ -49,6 +47,9 @@ describe("DistanceCache", () => {
         await Promise.resolve();
         Object.assign(backing, obj);
       }),
+      remove: vi.fn(async () => {
+        return Promise.resolve();
+      }),
     };
     const cache = new DistanceCache(asyncStorage, { ttlMs: 10_000, maxEntries: 100 });
     const now = Date.now();
@@ -69,5 +70,16 @@ describe("DistanceCache", () => {
     await cache.set("k4", { meters: 1, minutes: 1, fetchedAt: now });
     expect(await cache.get("k1")).toBeNull();
     expect(await cache.get("k4")).not.toBeNull();
+  });
+
+  it("clears all entries", async () => {
+    const cache = new DistanceCache(storage, { ttlMs: 10_000, maxEntries: 100 });
+    const entry: DistanceCacheEntry = { meters: 1000, minutes: 10, fetchedAt: Date.now() };
+    await cache.set("a→b", entry);
+    let got = await cache.count;
+    expect(got).toEqual(1);
+    await cache.clear();
+    got = await cache.count;
+    expect(got).toEqual(0);
   });
 });
