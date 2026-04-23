@@ -8,7 +8,6 @@ export interface Config {
   enabled: boolean;
   dimZeroMatch: boolean;
   dimNegativeMatch: boolean;
-  pausedTabs: Record<number, true>;
 }
 
 export const DEFAULT_CONFIG: Config = {
@@ -21,7 +20,6 @@ export const DEFAULT_CONFIG: Config = {
   enabled: true,
   dimZeroMatch: true,
   dimNegativeMatch: true,
-  pausedTabs: {},
 };
 
 const STORAGE_KEY = "config";
