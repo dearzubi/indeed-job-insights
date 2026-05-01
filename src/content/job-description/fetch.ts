@@ -17,11 +17,10 @@ const inFlightAPICalls = new Map<string, Promise<JobDescriptionResponse>>();
 
 const throttle = new Throttle(1, 2000);
 
-function getURL(jobKey: string): string {
-  return `${location.origin}/viewjob?jk=${encodeURIComponent(jobKey)}&viewtype=embedded`;
-}
-
-export async function fetchJobDescription(jobKey: string): Promise<JobDescriptionResponse> {
+export async function fetchJobDescription(
+  jobKey: string,
+  url: string,
+): Promise<JobDescriptionResponse> {
   const pending = inFlightAPICalls.get(jobKey);
   if (pending) return pending;
 
@@ -30,7 +29,7 @@ export async function fetchJobDescription(jobKey: string): Promise<JobDescriptio
   if (cachedJD) return { ok: true, data: cachedJD.data };
 
   const response = await throttle.run(() =>
-    fetchWithRetry(getURL(jobKey), { credentials: "include" }),
+    fetchWithRetry(url, { credentials: "include", redirect: "follow" }),
   );
 
   if (response.ok) {

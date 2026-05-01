@@ -88,8 +88,14 @@ function removeInsights(host: HTMLElement): void {
   }
 }
 
+function resolveJobUrl(jobKey: string): string {
+  const link = document.querySelector<HTMLAnchorElement>(`a[data-jk="${CSS.escape(jobKey)}"]`);
+  if (link?.href) return link.href;
+  return `${location.origin}/viewjob?jk=${encodeURIComponent(jobKey)}&viewtype=embedded`;
+}
+
 async function renderInsights(host: HTMLElement, jobKey: string): Promise<void> {
-  const desc = await fetchJobDescription(jobKey);
+  const desc = await fetchJobDescription(jobKey, resolveJobUrl(jobKey));
   if (getActiveJobKey() !== jobKey) return;
   const parent = host.parentElement;
   if (!parent) return;

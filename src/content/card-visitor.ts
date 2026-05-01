@@ -9,12 +9,10 @@ import { extractJobKey, SELECTORS } from "./selectors.ts";
 
 const visited = new WeakSet<HTMLElement>();
 
-// Require the card to remain intersecting for this long before we fetch. Fast
-// scrolls cross the viewport in well under this window, so they no longer
-// queue /viewjob requests to prevent Cloudflare 403.
+// Require the card to remain intersecting for this long before we fetch.
 const DWELL_MS = 700;
 
-// "success" = full /viewjob data decorated; the card is done and the observer
+// "success" = full job data decorated; the card is done and the observer
 // can detach. "retry" = either the card scrolled off while queued or the fetch
 // failed (Cloudflare 403, breaker skip, network error); keep the observer
 // alive so the next re-view triggers a fresh attempt once the error clears.
@@ -92,15 +90,16 @@ export function observeCard(card: HTMLElement, config: Config): void {
 }
 
 async function processCard(card: HTMLElement, config: Config): Promise<ProcessResult> {
+  const link = card.querySelector<HTMLAnchorElement>(SELECTORS.jobTitleLink);
   const jobKey = extractJobKey(card);
-  // No job key means there's nothing we can fetch for this element - no point
-  // keeping the observer alive.
-  if (!jobKey) return "success";
+  // No job key or no link means there's nothing we can fetch for this element
+  // - no point keeping the observer alive.
+  if (!jobKey || !link?.href) return "success";
 
   const structuredLocation =
     card.querySelector<HTMLElement>(SELECTORS.locationText)?.textContent?.trim() ?? "";
 
-  const desc = await fetchJobDescription(jobKey);
+  const desc = await fetchJobDescription(jobKey, link.href);
   if (!desc.ok) return "retry";
 
   const data = desc.data;
