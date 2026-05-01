@@ -1,6 +1,6 @@
 import type { Config } from "../shared/config.ts";
-import { fetchJobDescription } from "./description-fetch.ts";
 import { unwrapHighlights, wrapTerms } from "./highlight.ts";
+import { fetchJobDescription } from "./job-description/fetch.ts";
 import { extractJobKey, SELECTORS } from "./selectors.ts";
 
 const DETAIL_PANE_SELECTOR = "#jobDescriptionText";
@@ -96,8 +96,10 @@ async function renderInsights(host: HTMLElement, jobKey: string): Promise<void> 
 
   removeInsights(host);
   if (!desc.ok) return;
-  const skillsEl = renderSkillsBlock(desc.mustHaveSkills);
-  const employerEl = desc.employerResponsive ? renderEmployerBlock(desc.employerResponsive) : null;
+  const skillsEl = renderSkillsBlock(desc.data.mustHaveSkills);
+  const employerEl = desc.data.employerResponsive
+    ? renderEmployerBlock(desc.data.employerResponsive)
+    : null;
   if (!skillsEl && !employerEl) return;
 
   const container = document.createElement("div");

@@ -1,4 +1,4 @@
-import { type DistanceCache, distanceCache } from "../background/cache.ts";
+import { distanceCache } from "../background/cache.ts";
 import { configStore } from "../shared/config.ts";
 import { $ } from "../shared/dom.ts";
 import { normalizeCityName, normalizeKeyword } from "../shared/normalize.ts";
@@ -15,7 +15,7 @@ const status = $<HTMLSpanElement>("status");
 const clearCacheBtn = $<HTMLButtonElement>("clearCache");
 const cacheStatus = $<HTMLSpanElement>("cacheStatus");
 
-async function refreshCacheStatus(cache: DistanceCache): Promise<void> {
+async function refreshCacheStatus(cache: typeof distanceCache): Promise<void> {
   const n = await cache.count;
   cacheStatus.textContent = `${n} cached location${n === 1 ? "" : "s"}.`;
   cacheStatus.classList.remove("error");
