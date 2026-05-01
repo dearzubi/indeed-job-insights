@@ -1,10 +1,22 @@
 import type { Config } from "../shared/config.ts";
 import { sanitizeLocation } from "../shared/location.ts";
 import type { ComputeDistanceResponse, DistanceDestination } from "../shared/types.ts";
-import { fetchJobDescription, type JobLocation } from "./description-fetch.ts";
 import { inject } from "./injector.ts";
+import { fetchJobDescription } from "./job-description/fetch.ts";
+import type { JobLocation } from "./job-description/types.ts";
 import { match } from "./matcher.ts";
 import { extractJobKey, SELECTORS } from "./selectors.ts";
+
+const visited = new WeakSet<HTMLElement>();
+
+// Require the card to remain intersecting for this long before we fetch.
+const DWELL_MS = 700;
+
+// "success" = full job data decorated; the card is done and the observer
+// can detach. "retry" = either the card scrolled off while queued or the fetch
+// failed (Cloudflare 403, breaker skip, network error); keep the observer
+// alive so the next re-view triggers a fresh attempt once the error clears.
+type ProcessResult = "success" | "retry";
 
 // Priority Order: postcode > lat/long > fullAddress > card text.
 // Postcode is composed with countryCode so Google disambiguate codes that
@@ -31,48 +43,74 @@ export function pickDestination(
   return cleaned ? { address: cleaned } : null;
 }
 
-const visited = new WeakSet<HTMLElement>();
-
 export function observeCard(card: HTMLElement, config: Config): void {
   if (visited.has(card)) return;
+  let dwellTimer: ReturnType<typeof setTimeout> | null = null;
+  let isVisible = false;
+  let processing = false;
   const observer = new IntersectionObserver(
     (entries) => {
       for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        observer.disconnect();
-        // Mark visited before awaiting so a repeatedly-failing card doesn't
-        // retry on every scroll (which would burn the throttle + API budget).
-        // The tradeoff: one-off upstream hiccups leave the card un-decorated
-        // until the next page load.
-        visited.add(card);
-        processCard(card, config).catch((e) => {
-          console.warn("[indeed-job-insights] card processing failed", e);
-        });
+        isVisible = entry.isIntersecting;
+
+        // While a processCard is already running, keep updating isVisible so
+        // the queued fetch sees the current state, but don't start another.
+        if (processing) continue;
+
+        if (entry.isIntersecting) {
+          if (dwellTimer !== null) continue;
+          dwellTimer = setTimeout(async () => {
+            dwellTimer = null;
+            if (!isVisible) return;
+            processing = true;
+            let result: ProcessResult = "retry";
+            try {
+              result = await processCard(card, config);
+            } catch (e) {
+              console.warn("[indeed-job-insights] card processing failed", e);
+            }
+            if (result === "success") {
+              visited.add(card);
+              observer.disconnect();
+              return;
+            }
+            // Partial/skipped: leave the observer alive so the next time the
+            // card re-enters the viewport, a fresh dwell cycle can re-attempt.
+            processing = false;
+          }, DWELL_MS);
+        } else if (dwellTimer !== null) {
+          clearTimeout(dwellTimer);
+          dwellTimer = null;
+        }
       }
     },
-    { threshold: 0.1 },
+    { threshold: 0.5 },
   );
   observer.observe(card);
 }
 
-async function processCard(card: HTMLElement, config: Config): Promise<void> {
+async function processCard(card: HTMLElement, config: Config): Promise<ProcessResult> {
+  const link = card.querySelector<HTMLAnchorElement>(SELECTORS.jobTitleLink);
   const jobKey = extractJobKey(card);
-  if (!jobKey) return;
+  // No job key or no link means there's nothing we can fetch for this element
+  // - no point keeping the observer alive.
+  if (!jobKey || !link?.href) return "success";
 
   const structuredLocation =
     card.querySelector<HTMLElement>(SELECTORS.locationText)?.textContent?.trim() ?? "";
 
-  const desc = await fetchJobDescription(jobKey);
-  // Fall back to the card's visible snippet when the /viewjob fetch fails
-  // (typically Cloudflare 403 after a burst). Better to decorate with a
-  // partial signal than to leave the card blank.
+  const desc = await fetchJobDescription(jobKey, link.href);
+  if (!desc.ok) return "retry";
+
+  const data = desc.data;
+
   const fullText = desc.ok
-    ? desc.fullText
+    ? data.fullText
     : (card.querySelector<HTMLElement>(SELECTORS.snippetText)?.textContent?.trim() ?? "");
 
-  const postedAge = desc.ok ? desc.postedAge : null;
-  const postedToday = desc.ok ? desc.postedToday : false;
-  const organicApplyStarts = desc.ok ? desc.organicApplyStarts : null;
+  const postedAge = data.postedAge;
+  const postedToday = data.postedToday;
+  const organicApplyStarts = data.organicApplyStarts;
 
   const result = match(fullText, structuredLocation, config);
 
@@ -83,7 +121,7 @@ async function processCard(card: HTMLElement, config: Config): Promise<void> {
     config.myAddress.trim() !== "" && config.googleMapsApiKey.trim() !== "";
 
   const destination = canComputeDistance
-    ? pickDestination(desc.ok ? desc.location : null, structuredLocation)
+    ? pickDestination(data.location, structuredLocation)
     : null;
 
   if (destination) {
@@ -119,4 +157,6 @@ async function processCard(card: HTMLElement, config: Config): Promise<void> {
     postedToday,
     organicApplyStarts,
   });
+
+  return "success";
 }

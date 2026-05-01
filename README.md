@@ -105,6 +105,10 @@ As cards scroll into view, the extension fetches each posting's detail page in t
   - Requests to Indeed's own `/viewjob` endpoint (the same one your browser would hit if you clicked the card).
 - Your API key, address, keywords, cities, toggle state, and cached driving times are stored in `chrome.storage.local`. Nothing is synced across devices.
 
+## Known Limitations
+
+- It can get hit by Cloudflare to prevent against bot traffic. I've tried throttling job description fetch endpoint, but it's not enough to prevent this. A sophisticated solution like rotating residential proxies perhaps can help. However, I've no intention of dealing with proxy complexity yet. For my personal use-case, I can manage it by being slow and remaining under the detection limits. PRs, however, are welcome with better solutions to address this. 
+
 ---
 
 Built with ❤️ and [Claude Code](https://claude.com/claude-code).
